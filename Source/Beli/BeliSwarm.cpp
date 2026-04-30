@@ -22,16 +22,18 @@ void ABeliSwarm::BeginPlay()
 	
 	check(IsValid(InstancedMeshComp));
 	
-	Boids.Reserve(MaxNumBoids);
-	
-	for (int32 i = 0; i < MaxNumBoids; ++i)
+	Boids.Reserve(MaxBoidsCount);
+	for (int32 i = 0; i < MaxBoidsCount; ++i)
 	{
-		FBoidData& Boid = Boids[i];
-		Boid.Location = FVector(FMath::RandRange(-100, 100), FMath::RandRange(-100, 100), FMath::RandRange(-100, 100));
-		Boid.Velocity = FVector(FMath::RandRange(-100, 100), FMath::RandRange(-100, 100), FMath::RandRange(-100, 100));
-		Boid.Rotation = Boid.Velocity.ToOrientationRotator();
+		FBoidData NewBoid;
+		NewBoid.Index = i;
+		NewBoid.Location = FVector(FMath::RandRange(-100, 100), FMath::RandRange(-100, 100), FMath::RandRange(-100, 100));
+		NewBoid.Velocity = FVector(FMath::RandRange(-100, 100), FMath::RandRange(-100, 100), FMath::RandRange(-100, 100));
+		NewBoid.Rotation = NewBoid.Velocity.ToOrientationRotator();
 		
-		InstancedMeshComp->AddInstance(Boid.GetTransaform());
+		Boids.Emplace(NewBoid);
+		
+		InstancedMeshComp->AddInstance(NewBoid.GetTransaform());
 	}
 }
 
@@ -41,32 +43,76 @@ void ABeliSwarm::Tick(float DeltaTime)
 	
 	check(IsValid(InstancedMeshComp));
 	
-	for (int32 i = 0; i < MaxNumBoids; ++i)
+	TArray<FTransform> NewTransforms;
+	NewTransforms.Reserve(MaxBoidsCount);
+	for (int32 i = 0; i < MaxBoidsCount; ++i)
 	{
 		FBoidData& Boid = Boids[i];
 		
-		const FVector& Seperation = CalcSeperation(Boid);
-		const FVector& Alignment = CalcAlignment(Boid);
-		const FVector& Cohesion = CalcCohesion(Boid);
+		FVector Cohesion = CalcCohesion(Boid);
+		FVector Seperation = CalcSeperation(Boid);
+		FVector Alignment = CalcAlignment(Boid);
 		
-		Boid.Velocity += (Seperation + Alignment + Cohesion) * DeltaTime;
+		Boid.Velocity += (Cohesion + Seperation + Alignment);
 		Boid.Rotation = FMath::RInterpTo(Boid.Rotation, Boid.Velocity.ToOrientationRotator(), DeltaTime, 0.1f);
-		Boid.Location += Boid.Velocity;
+		Boid.Location += (Boid.Velocity * DeltaTime);
+		
+		NewTransforms.Emplace(Boid.GetTransaform());
 	}
+	
+	InstancedMeshComp->BatchUpdateInstancesTransforms(0, NewTransforms, false, true, false);
 }
 
-const FVector& ABeliSwarm::CalcSeperation(const FBoidData& InBoidData) const
+FVector ABeliSwarm::CalcCohesion(const FBoidData& InBoidData) const
 {
-	return FVector::ZeroVector;
+	FVector TotalOfBoidLocations;
+	for (int32 i = 0; i < MaxBoidsCount; ++i)
+	{
+		const FBoidData& Boid = Boids[i];
+		if (Boid.Index != InBoidData.Index)
+		{
+			TotalOfBoidLocations += Boid.Location;
+		}
+	}
+	
+	// TODO 중앙으로 이동하는 값 PROPERTY 처리
+	return (TotalOfBoidLocations / (MaxBoidsCount - 1)) * 0.01f;
 }
 
-const FVector& ABeliSwarm::CalcAlignment(const FBoidData& InBoidData) const
+FVector ABeliSwarm::CalcSeperation(const FBoidData& InBoidData) const
 {
-	return FVector::ZeroVector;
+	FVector TowardLocationToSperation;
+	for (int32 i = 0; i < MaxBoidsCount; ++i)
+	{
+		const FBoidData& Boid = Boids[i];
+		if (Boid.Index != InBoidData.Index)
+		{
+			// TODO 거리 값 PROPERTY 처리
+			if (FVector::DistSquared(Boid.Location, InBoidData.Location) < 100.f * 100.f)
+			{
+				TowardLocationToSperation += (Boid.Location - InBoidData.Location);
+			}
+		}
+	}
+	
+	return TowardLocationToSperation;
 }
 
-const FVector& ABeliSwarm::CalcCohesion(const FBoidData& InBoidData) const
+FVector ABeliSwarm::CalcAlignment(const FBoidData& InBoidData) const
 {
-	return FVector::ZeroVector;
+	FVector TotalOfBoidVelocitys;
+	
+	for (int32 i = 0; i < MaxBoidsCount; ++i)
+	{
+		const FBoidData& Boid = Boids[i];
+		if (Boid.Index != InBoidData.Index)
+		{
+			TotalOfBoidVelocitys += Boid.Velocity;
+		}
+	}
+	
+	// TODO 보정 값 PROPERTY 처리
+	return (TotalOfBoidVelocitys / (MaxBoidsCount - 1)) / 8.0f;
 }
+
 

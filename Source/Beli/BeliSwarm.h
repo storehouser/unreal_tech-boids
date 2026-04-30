@@ -16,14 +16,16 @@ struct FBoidData
 	GENERATED_BODY()
 	
 public:
+	int32 Index = -1;
+	
 	/** 현재 위치 */
-	FVector Location;
+	FVector Location = FVector::ZeroVector;
 	
 	/** 방향 */
-	FRotator Rotation;
+	FRotator Rotation = FRotator::ZeroRotator;
 	
 	/** 이름 방향 및 속력 */
-	FVector Velocity;
+	FVector Velocity = FVector::ZeroVector;
 	
 public:
 	FTransform GetTransaform() const
@@ -51,19 +53,19 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	
 protected:
+	/** 응집 계산 - 모든 이웃 사이의 중간점을 찾고 중간점을 향해 이동하는 규칙 */
+	FVector CalcCohesion(const FBoidData& InBoidData) const;
+	
 	/** 분리 계산 - 자기 주변의 객체들이 붐비는 것을 피하기 위해 근처 이웃들에서 벗어나는 규칙 */
-	const FVector& CalcSeperation(const FBoidData& InBoidData) const;
+	FVector CalcSeperation(const FBoidData& InBoidData) const;
 	
 	/** 정렬 계산 - 이웃 객체들의 평균 방향으로 이동하는 규칙 */
-	const FVector& CalcAlignment(const FBoidData& InBoidData) const;
-	
-	/** 응집 계산 - 모든 이웃 사이의 중간점을 찾고 중간점을 향해 이동하는 규칙 */
-	const FVector& CalcCohesion(const FBoidData& InBoidData) const;
+	FVector CalcAlignment(const FBoidData& InBoidData) const;
 	
 public:
 	/** 최대 Boid 객체의 수 */
 	UPROPERTY(EditAnywhere, Category = "Boid")
-	int32 MaxNumBoids = 10;
+	int32 MaxBoidsCount = 50;
 	
 protected:
 	/** */
