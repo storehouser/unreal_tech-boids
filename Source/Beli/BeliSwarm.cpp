@@ -52,8 +52,9 @@ void ABeliSwarm::Tick(float DeltaTime)
 		FVector Cohesion = CalcCohesion(Boid);
 		FVector Seperation = CalcSeperation(Boid);
 		FVector Alignment = CalcAlignment(Boid);
+		FVector Place = CalcTendingToPlace(Boid);
 		
-		Boid.Velocity += (Cohesion + Seperation + Alignment);
+		Boid.Velocity += (Cohesion + Seperation + Alignment + Place);
 		Boid.Rotation = FMath::RInterpTo(Boid.Rotation, Boid.Velocity.ToOrientationRotator(), DeltaTime, 0.1f);
 		Boid.Location += (Boid.Velocity * DeltaTime);
 		
@@ -100,19 +101,26 @@ FVector ABeliSwarm::CalcSeperation(const FBoidData& InBoidData) const
 
 FVector ABeliSwarm::CalcAlignment(const FBoidData& InBoidData) const
 {
-	FVector TotalOfBoidVelocitys;
+	FVector TotalOfBoidVelocities;
 	
 	for (int32 i = 0; i < MaxBoidsCount; ++i)
 	{
 		const FBoidData& Boid = Boids[i];
 		if (Boid.Index != InBoidData.Index)
 		{
-			TotalOfBoidVelocitys += Boid.Velocity;
+			TotalOfBoidVelocities += Boid.Velocity;
 		}
 	}
 	
 	// TODO 보정 값 PROPERTY 처리
-	return (TotalOfBoidVelocitys / (MaxBoidsCount - 1)) / 8.0f;
+	return (TotalOfBoidVelocities / (MaxBoidsCount - 1)) / 8.0f;
+}
+
+FVector ABeliSwarm::CalcTendingToPlace(const FBoidData& InBoidData) const
+{
+	FVector DestLocation = FVector::ZeroVector;
+	
+	return (DestLocation - InBoidData.Location) / 100.f;
 }
 
 

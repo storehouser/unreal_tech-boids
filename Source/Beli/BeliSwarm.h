@@ -61,6 +61,9 @@ protected:
 	
 	/** 정렬 계산 - 이웃 객체들의 평균 방향으로 이동하는 규칙 */
 	FVector CalcAlignment(const FBoidData& InBoidData) const;
+
+	/** 목적지 계산 */
+    FVector CalcTendingToPlace(const FBoidData& InBoidData) const;
 	
 public:
 	/** 최대 Boid 객체의 수 */
