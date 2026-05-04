@@ -30,4 +30,7 @@ Algorithm: Boids (Flocking Simulation)
 
 
 # ⚙️ Getting Started
-본 프로젝트는 Unreal Engine 환경에서 빌드되었습니다. Repository 클론: git clone https://github.com/YourUsername/Beli.git.uproject 파일을 우클릭하여 Generate Visual Studio project files 실행Visual Studio에서 솔루션 빌드 후 언리얼 에디터 실행BP_BeliSwarm 액터를 레벨에 배치하여 시뮬레이션 테스트
+본 프로젝트는 Unreal Engine 환경에서 빌드되었습니다.
+Repository 클론: git clone https://github.com/YourUsername/Beli.git.uproject 파일을 우클릭하여 Generate Visual Studio project files 실행
+Visual Studio에서 솔루션 빌드 후 언리얼 에디터 실행
+BP_BeliSwarm 액터를 레벨에 배치하여 시뮬레이션 테스트
