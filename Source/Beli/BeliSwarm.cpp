@@ -22,7 +22,8 @@ void ABeliSwarm::BeginPlay()
 	
 	check(IsValid(InstancedMeshComp));
 	
-	Boids.Reserve(MaxBoidsCount);
+	CurrentBoids.Reserve(MaxBoidsCount);
+	
 	for (int32 i = 0; i < MaxBoidsCount; ++i)
 	{
 		FBoidData NewBoid;
@@ -31,10 +32,12 @@ void ABeliSwarm::BeginPlay()
 		NewBoid.Velocity = FVector(FMath::RandRange(-100, 100), FMath::RandRange(-100, 100), FMath::RandRange(-100, 100));
 		NewBoid.Rotation = NewBoid.Velocity.ToOrientationRotator();
 		
-		Boids.Emplace(NewBoid);
+		CurrentBoids.Emplace(NewBoid);
 		
 		InstancedMeshComp->AddInstance(NewBoid.GetTransaform());
 	}
+	
+	NextBoids = CurrentBoids;
 }
 
 void ABeliSwarm::Tick(float DeltaTime)
@@ -43,25 +46,32 @@ void ABeliSwarm::Tick(float DeltaTime)
 	
 	check(IsValid(InstancedMeshComp));
 	
+	// TODO 해당 배열을 매 Tick 마다 생성하지 말고 미리 생성.
+	// 혹은 Boid 배열 자체를 Transform으로 처리할 수 있게
 	TArray<FTransform> NewTransforms;
 	NewTransforms.Reserve(MaxBoidsCount);
 	for (int32 i = 0; i < MaxBoidsCount; ++i)
 	{
-		FBoidData& Boid = Boids[i];
+		FBoidData& Boid = CurrentBoids[i];
 		
 		FVector Cohesion = CalcCohesion(Boid);
 		FVector Seperation = CalcSeperation(Boid);
 		FVector Alignment = CalcAlignment(Boid);
 		FVector Place = CalcTendingToPlace(Boid);
 		
-		Boid.Velocity += (Cohesion + Seperation + Alignment + Place);
-		Boid.Rotation = FMath::RInterpTo(Boid.Rotation, Boid.Velocity.ToOrientationRotator(), DeltaTime, 0.1f);
-		Boid.Location += (Boid.Velocity * DeltaTime);
+		FVector NewForce = (Cohesion + Seperation + Alignment + Place).GetClampedToMaxSize(MaxForce);
 		
-		NewTransforms.Emplace(Boid.GetTransaform());
+		FBoidData& NextBoid = NextBoids[i];
+		NextBoid.Velocity = (Boid.Velocity + NewForce * DeltaTime).GetClampedToMaxSize(MaxSpeed);
+		NextBoid.Rotation = FMath::RInterpTo(Boid.Rotation, FRotationMatrix::MakeFromZ(NextBoid.Velocity.GetSafeNormal()).Rotator(), DeltaTime, 30.f);
+		NextBoid.Location = Boid.Location + (NextBoid.Velocity * DeltaTime); 
+		
+		NewTransforms.Emplace(NextBoid.GetTransaform());
 	}
 	
 	InstancedMeshComp->BatchUpdateInstancesTransforms(0, NewTransforms, false, true, false);
+	
+	Swap(CurrentBoids, NextBoids);
 }
 
 FVector ABeliSwarm::CalcCohesion(const FBoidData& InBoidData) const
@@ -69,34 +79,32 @@ FVector ABeliSwarm::CalcCohesion(const FBoidData& InBoidData) const
 	FVector TotalOfBoidLocations;
 	for (int32 i = 0; i < MaxBoidsCount; ++i)
 	{
-		const FBoidData& Boid = Boids[i];
+		const FBoidData& Boid = CurrentBoids[i];
 		if (Boid.Index != InBoidData.Index)
 		{
 			TotalOfBoidLocations += Boid.Location;
 		}
 	}
 	
-	// TODO 중앙으로 이동하는 값 PROPERTY 처리
-	return (TotalOfBoidLocations / (MaxBoidsCount - 1)) * 0.01f;
+	return (TotalOfBoidLocations / (MaxBoidsCount - 1)) * CohesionWeight;
 }
 
 FVector ABeliSwarm::CalcSeperation(const FBoidData& InBoidData) const
 {
-	FVector TowardLocationToSperation;
+	FVector TowardLocationToSeperation;
 	for (int32 i = 0; i < MaxBoidsCount; ++i)
 	{
-		const FBoidData& Boid = Boids[i];
+		const FBoidData& Boid = CurrentBoids[i];
 		if (Boid.Index != InBoidData.Index)
 		{
-			// TODO 거리 값 PROPERTY 처리
 			if (FVector::DistSquared(Boid.Location, InBoidData.Location) < 100.f * 100.f)
 			{
-				TowardLocationToSperation += (Boid.Location - InBoidData.Location);
+				TowardLocationToSeperation += (Boid.Location - InBoidData.Location);
 			}
 		}
 	}
 	
-	return TowardLocationToSperation;
+	return TowardLocationToSeperation * SeperationWeight;
 }
 
 FVector ABeliSwarm::CalcAlignment(const FBoidData& InBoidData) const
@@ -105,22 +113,21 @@ FVector ABeliSwarm::CalcAlignment(const FBoidData& InBoidData) const
 	
 	for (int32 i = 0; i < MaxBoidsCount; ++i)
 	{
-		const FBoidData& Boid = Boids[i];
+		const FBoidData& Boid = CurrentBoids[i];
 		if (Boid.Index != InBoidData.Index)
 		{
 			TotalOfBoidVelocities += Boid.Velocity;
 		}
 	}
 	
-	// TODO 보정 값 PROPERTY 처리
-	return (TotalOfBoidVelocities / (MaxBoidsCount - 1)) / 8.0f;
+	return (TotalOfBoidVelocities / (MaxBoidsCount - 1)) * AlignmentWeight;
 }
 
 FVector ABeliSwarm::CalcTendingToPlace(const FBoidData& InBoidData) const
 {
 	FVector DestLocation = FVector::ZeroVector;
 	
-	return (DestLocation - InBoidData.Location) / 100.f;
+	return (DestLocation - InBoidData.Location) * TendingToPlaceWeight;
 }
 
 

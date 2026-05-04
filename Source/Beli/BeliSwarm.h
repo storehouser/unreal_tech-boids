@@ -70,10 +70,29 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Boid")
 	int32 MaxBoidsCount = 50;
 	
+	UPROPERTY(EditAnywhere, Category = "Boid|Limitation")
+	float MaxForce = 1000.f;
+	
+	UPROPERTY(EditAnywhere, Category = "Boid|Limitation")
+	float MaxSpeed = 500.f;
+	
+	UPROPERTY(EditAnywhere, Category = "Boid|Weight", meta = (ClampMin = "0.0", ClampMax = "1.0", UIMin = "0.0", UIMax = "1.0"))
+	float CohesionWeight = 0.01f;
+	
+	UPROPERTY(EditAnywhere, Category = "Boid|Weight", meta = (ClampMin = "0.0", ClampMax = "1.0", UIMin = "0.0", UIMax = "1.0"))
+	float SeperationWeight = 0.01f;
+	
+	UPROPERTY(EditAnywhere, Category = "Boid|Weight", meta = (UIMin = "0.0", UIMax = "1.0"))
+	float AlignmentWeight = 0.01f;
+	
+	UPROPERTY(EditAnywhere, Category = "Boid|Weight", meta = (ClampMin = "0.0", ClampMax = "1.0", UIMin = "0.0", UIMax = "1.0"))
+	float TendingToPlaceWeight = 0.01f;
+	
 protected:
 	/** */
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<class UInstancedStaticMeshComponent> InstancedMeshComp;
 	
-	TArray<FBoidData> Boids;
+	TArray<FBoidData> CurrentBoids;
+	TArray<FBoidData> NextBoids;
 };
