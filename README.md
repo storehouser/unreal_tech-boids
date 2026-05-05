@@ -3,6 +3,7 @@ Unreal Engine Boids SimulationAn Unreal Engine project focused on the implementa
 
 
 # 📖 Project Overview
+<img width="1188" height="1159" alt="image" src="https://github.com/user-attachments/assets/0bbfe52d-3a99-43b7-8213-669792d1b42d" />
 Beli 프로젝트는 수많은 객체(Boids)가 유기적으로 무리 지어 이동하는 군집 시뮬레이션을 언리얼 엔진(Unreal Engine) 환경에서 C++로 구현하는 프로젝트입니다.<br>
 단순한 로직 구현을 넘어, 수천개의 객체를 렌더링하고 연산하기 위한 최적화 기법을 점진적으로 적용하고 연구하는 것을 목표로 합니다.<br><br>
 
