@@ -204,7 +204,7 @@ FVector ABeliSwarm::CalcAlignment(const FBoidData& InBoidData) const
 	return AlignmentForce * AlignmentWeight;
 }
 
-FVector ABeliSwarm::CalcObstacleAvoidance(const FBoidData& Boid)
+FVector ABeliSwarm::CalcObstacleAvoidance(const FBoidData& InBoidData) const
 {
 	const UWorld* World = GetWorld();
 	check(IsValid(World));
@@ -216,8 +216,8 @@ FVector ABeliSwarm::CalcObstacleAvoidance(const FBoidData& Boid)
     
 	// 이동 방향 전방으로 AvoidDistance 만큼 검사
 	const FTransform ManagerWorldTransform = InstancedMeshComp->GetComponentTransform();
-	const FVector ForwardDir = ManagerWorldTransform.TransformVector(Boid.Velocity).GetSafeNormal();
-	const FVector BoidWorldLocation = ManagerWorldTransform.TransformPosition(Boid.Location);
+	const FVector ForwardDir = ManagerWorldTransform.TransformVector(InBoidData.Velocity).GetSafeNormal();
+	const FVector BoidWorldLocation = ManagerWorldTransform.TransformPosition(InBoidData.Location);
 	const FVector EndPos = BoidWorldLocation + (ForwardDir * AvoidDistance);
 
 	const bool bHitForward = World->SweepSingleByChannel(
@@ -231,7 +231,7 @@ FVector ABeliSwarm::CalcObstacleAvoidance(const FBoidData& Boid)
 	
 	// DrawDebugLine(World, BoidWorldLocation, EndPos, bHitForward ? FColor::Red : FColor::Green, false, -1.0f, 0, 2.0f);
 
-	// 2. 정면에 아무것도 없다면 굳이 피보나치 연산을 할 필요가 없습니다! (최고의 최적화)
+	// 2. 정면에 아무것도 없다면 굳이 피보나치 연산을 할 필요가 없습니다!
 	if (!bHitForward) 
 	{
 		return AvoidanceForce; 
@@ -242,11 +242,10 @@ FVector ABeliSwarm::CalcObstacleAvoidance(const FBoidData& Boid)
 	bool bFoundEscape = false;
 
 	const FQuat ManagerWorldQuat = ManagerWorldTransform.GetRotation();
-	const FRotator BoidWorldRotation = (ManagerWorldQuat * Boid.Rotation.Quaternion()).Rotator();
+	const FRotator BoidWorldRotation = (ManagerWorldQuat * InBoidData.Rotation.Quaternion()).Rotator();
 	
 	// for (const FVector& RayDir : FibonacciDirections)
 	// {
-	// 	// 피보나치 방향은 Boid의 로컬 좌표계 기준이므로, 월드 방향으로 변환.
 	// 	FVector WorldRayDir = BoidWorldRotation.RotateVector(RayDir);
 	// 	FVector RayEndPos = BoidWorldLocation + (WorldRayDir * AvoidDistance);
 	// 	
@@ -284,12 +283,12 @@ FVector ABeliSwarm::CalcObstacleAvoidance(const FBoidData& Boid)
 	{
 		const FVector LocalDirection = ManagerWorldTransform.InverseTransformVector(EscapeDirection);
 		const FVector DesiredVelocity = LocalDirection * MaxSpeed;
-		AvoidanceForce = (DesiredVelocity - Boid.Velocity);
+		AvoidanceForce = (DesiredVelocity - InBoidData.Velocity);
 	}
 	else
 	{
 		// 모든 방향이 막혀있다면 (막다른 골목)? -> 브레이크를 밟거나 뒤로 돌기!
-		AvoidanceForce = -Boid.Velocity; 
+		AvoidanceForce = -InBoidData.Velocity; 
 	}
 
 	return AvoidanceForce * ObstacleAvoidanceWeight;
