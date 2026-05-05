@@ -28,7 +28,7 @@ public:
 	FVector Velocity = FVector::ZeroVector;
 	
 public:
-	FTransform GetTransaform() const
+	FTransform GetTransform() const
 	{
 		return FTransform(Rotation, Location, FVector::OneVector * 0.5f);
 	}
@@ -61,6 +61,9 @@ protected:
 	
 	/** 정렬 Force 계산 - 이웃 객체들의 평균 방향으로 이동하는 규칙 */
 	FVector CalcAlignment(const FBoidData& InBoidData) const;
+	
+	/** 충돌 체 회피 Force 계산 - 월드에 있는 정적 객체 회피 */
+	FVector CalcObstacleAvoidance(const FBoidData& Boid);
 
 	/** 목적지 Force 계산 */
     FVector CalcTendingToPlace(const FBoidData& InBoidData) const;
@@ -86,7 +89,7 @@ public:
 	float CohesionSlowingRadius = 200.f;
 	
 	UPROPERTY(EditAnywhere, Category = "Boid|Separation", meta = (ClampMin = "0.0", ClampMax = "1000.0", UIMin = "0.0", UIMax = "1000.0"))
-	float SeparationWeight = 0.01f;
+	float SeparationWeight = 300.f;
 	
 	UPROPERTY(EditAnywhere, Category = "Boid|Separation")
 	float SeparationRadius = 100.f;
@@ -97,6 +100,15 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Boid|Alignment")
 	float AlignmentRadius = 500.f;
 	
+	UPROPERTY(EditAnywhere, Category = "Boid|ObstacleAvoidance", meta = (ClampMin = "0.0", ClampMax = "5000.0", UIMin = "0.0", UIMax = "5000.0"))
+	float ObstacleAvoidanceWeight = 1.0f;
+	
+	UPROPERTY(EditAnywhere, Category = "Boid|ObstacleAvoidance")
+	float BoidRadius = 30.f;
+	
+	UPROPERTY(EditAnywhere, Category = "Boid|ObstacleAvoidance")
+	float AvoidDistance = 400.f;
+	
 	UPROPERTY(EditAnywhere, Category = "Boid|TendingToPlace", meta = (ClampMin = "0.0", ClampMax = "1.0", UIMin = "0.0", UIMax = "1.0"))
 	float TendingToPlaceWeight = 0.01f;
 	
@@ -106,4 +118,7 @@ protected:
 	
 	TArray<FBoidData> Boids;
 	TArray<FBoidData> NextBoids;
+	
+private:
+	TArray<FVector> FibonacciDirections;
 };
