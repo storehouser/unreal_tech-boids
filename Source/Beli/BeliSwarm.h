@@ -53,21 +53,21 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	
 protected:
-	/** 응집 계산 - 모든 이웃 사이의 중간점을 찾고 중간점을 향해 이동하는 규칙 */
+	/** 응집 Force 계산 - 모든 이웃 사이의 중간점을 찾고 중간점을 향해 이동하는 규칙 */
 	FVector CalcCohesion(const FBoidData& InBoidData) const;
 	
-	/** 분리 계산 - 자기 주변의 객체들이 붐비는 것을 피하기 위해 근처 이웃들에서 벗어나는 규칙 */
-	FVector CalcSeperation(const FBoidData& InBoidData) const;
+	/** 분리 Force 계산 - 자기 주변의 객체들이 붐비는 것을 피하기 위해 근처 이웃들에서 벗어나는 규칙 */
+	FVector CalcSeparation(const FBoidData& InBoidData) const;
 	
-	/** 정렬 계산 - 이웃 객체들의 평균 방향으로 이동하는 규칙 */
+	/** 정렬 Force 계산 - 이웃 객체들의 평균 방향으로 이동하는 규칙 */
 	FVector CalcAlignment(const FBoidData& InBoidData) const;
 
-	/** 목적지 계산 */
+	/** 목적지 Force 계산 */
     FVector CalcTendingToPlace(const FBoidData& InBoidData) const;
 	
 public:
 	/** 최대 Boid 객체의 수 */
-	UPROPERTY(EditAnywhere, Category = "Boid")
+	UPROPERTY(EditAnywhere, Category = "Boid", meta = (UIMax = "3000"))
 	int32 MaxBoidsCount = 50;
 	
 	UPROPERTY(EditAnywhere, Category = "Boid|Limitation")
@@ -76,23 +76,34 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Boid|Limitation")
 	float MaxSpeed = 500.f;
 	
-	UPROPERTY(EditAnywhere, Category = "Boid|Weight", meta = (ClampMin = "0.0", ClampMax = "1.0", UIMin = "0.0", UIMax = "1.0"))
+	UPROPERTY(EditAnywhere, Category = "Boid|Cohesion", meta = (ClampMin = "0.0", ClampMax = "1.0", UIMin = "0.0", UIMax = "1.0"))
 	float CohesionWeight = 0.01f;
 	
-	UPROPERTY(EditAnywhere, Category = "Boid|Weight", meta = (ClampMin = "0.0", ClampMax = "1.0", UIMin = "0.0", UIMax = "1.0"))
-	float SeperationWeight = 0.01f;
+	UPROPERTY(EditAnywhere, Category = "Boid|Cohesion")
+	float CohesionRadius = 300.f;
 	
-	UPROPERTY(EditAnywhere, Category = "Boid|Weight", meta = (UIMin = "0.0", UIMax = "1.0"))
+	UPROPERTY(EditAnywhere, Category = "Boid|Cohesion")
+	float CohesionSlowingRadius = 200.f;
+	
+	UPROPERTY(EditAnywhere, Category = "Boid|Separation", meta = (ClampMin = "0.0", ClampMax = "1000.0", UIMin = "0.0", UIMax = "1000.0"))
+	float SeparationWeight = 0.01f;
+	
+	UPROPERTY(EditAnywhere, Category = "Boid|Separation")
+	float SeparationRadius = 100.f;
+	
+	UPROPERTY(EditAnywhere, Category = "Boid|Alignment", meta = (UIMin = "0.0", UIMax = "1.0"))
 	float AlignmentWeight = 0.01f;
 	
-	UPROPERTY(EditAnywhere, Category = "Boid|Weight", meta = (ClampMin = "0.0", ClampMax = "1.0", UIMin = "0.0", UIMax = "1.0"))
+	UPROPERTY(EditAnywhere, Category = "Boid|Alignment")
+	float AlignmentRadius = 500.f;
+	
+	UPROPERTY(EditAnywhere, Category = "Boid|TendingToPlace", meta = (ClampMin = "0.0", ClampMax = "1.0", UIMin = "0.0", UIMax = "1.0"))
 	float TendingToPlaceWeight = 0.01f;
 	
 protected:
-	/** */
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<class UInstancedStaticMeshComponent> InstancedMeshComp;
 	
-	TArray<FBoidData> CurrentBoids;
+	TArray<FBoidData> Boids;
 	TArray<FBoidData> NextBoids;
 };
