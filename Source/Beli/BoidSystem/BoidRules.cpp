@@ -158,7 +158,7 @@ FVector UBoidRule_TendingToPlace::CalculateForce_Internal(const FBoidData& Boid,
 {
 	FVector PlaceForce = FVector::ZeroVector;
 	
-	const FVector Distance = BoidSceneContext.ManagerTransform.TransformPosition(PlaceLocation) - Boid.Location;
+	const FVector Distance = BoidSceneContext.SimulationSpace.TransformPosition(PlaceLocation) - Boid.Location;
 	if (!Distance.IsNearlyZero())
 	{
 		// 조향력(Steering) 도출: 목표 속도 - 현재 속도

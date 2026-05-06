@@ -42,7 +42,7 @@ struct FBoidSceneContext
 	
 	float BoidMaxSpeed;
 	
-	FTransform ManagerTransform;
+	FTransform SimulationSpace;
 	
 #if !UE_BUILD_SHIPPING
 	/** 디버그 정보 DebugParam이 0보다 크면 켜진 걸로 간주 - 일반적으로 BoidIndex 값과 Mod 연산자를 이용해 일부 Boid에 출력을 설정 처리 */
