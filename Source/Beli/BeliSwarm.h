@@ -10,7 +10,7 @@
 
 
 /**
- * Static Mesh로 이루어진 각 객체(Boid)들을 관리하는 SWarm 객체.
+ * Static Mesh로 이루어진 각 객체(Boid)들을 관리하는 Swarm 객체.
  */
 UCLASS()
 class BELI_API ABeliSwarm : public AActor
