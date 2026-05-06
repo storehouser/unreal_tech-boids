@@ -62,4 +62,7 @@ private:
 	TArray<FTransform> NextTransforms;
 	TArray<int32> CellStartIndex;	// HashTable 크기 (일반적으로 Boids의 전체 크기 * 2)
 	TArray<int32> BoidNextIndex;	// Boids의 전체 크기
+	
+	/** 최대 이웃 갯수, Stack 메모리를 사용하는 배열을 위해 Compile 타임에 지정 필요 */
+	constexpr static int32 MaxNeighborsNum = 32;
 };

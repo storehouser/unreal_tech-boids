@@ -6,7 +6,7 @@
 #include "Library/BoidsFunctionLibrary.h"
 
 
-FVector UBoidRuleBase::CalculateForce(const FBoidData& Boid, const TArray<FBoidData>& Neighbors, const FBoidSceneContext& BoidSceneContext) const
+FVector UBoidRuleBase::CalculateForce(const FBoidData& Boid, const TArrayView<const FBoidData*> Neighbors, const FBoidSceneContext& BoidSceneContext) const
 {
 	return CalculateForce_Internal(Boid, Neighbors, BoidSceneContext) * Weight;
 }
@@ -17,24 +17,24 @@ UBoidRule_Cohesion::UBoidRule_Cohesion()
 	Weight = 0.1f;
 }
 
-FVector UBoidRule_Cohesion::CalculateForce_Internal(const FBoidData& Boid, const TArray<FBoidData>& Neighbors, const FBoidSceneContext& BoidSceneContext) const
+FVector UBoidRule_Cohesion::CalculateForce_Internal(const FBoidData& Boid, const TArrayView<const FBoidData*> Neighbors, const FBoidSceneContext& BoidSceneContext) const
 {
 	FVector CohesionForce = FVector::ZeroVector;
 	FVector CenterOfMass = FVector::ZeroVector; // 이웃들의 위치를 다 더할 변수
 	int32 NumNeighborhood = 0;
 	const float CohesionDistSquared = FMath::Square(CohesionRadius);
 
-	for (const FBoidData& NeighborBoid : Neighbors)
+	for (const FBoidData* NeighborBoid : Neighbors)
 	{
-		if (NeighborBoid.Index == Boid.Index)
+		if (NeighborBoid->Index == Boid.Index)
 		{
 			continue;
 		}
 		
-		const float DiffDistSquared = (Boid.Location - NeighborBoid.Location).SquaredLength();
+		const float DiffDistSquared = (Boid.Location - NeighborBoid->Location).SquaredLength();
 		if (DiffDistSquared < CohesionDistSquared)
 		{
-			CenterOfMass += NeighborBoid.Location;
+			CenterOfMass += NeighborBoid->Location;
 			++NumNeighborhood;
 		}
 	}
@@ -65,20 +65,20 @@ UBoidRule_Separation::UBoidRule_Separation()
 	Weight = 800.f;
 }
 
-FVector UBoidRule_Separation::CalculateForce_Internal(const FBoidData& Boid, const TArray<FBoidData>& Neighbors, const FBoidSceneContext& BoidSceneContext) const
+FVector UBoidRule_Separation::CalculateForce_Internal(const FBoidData& Boid, const TArrayView<const FBoidData*> Neighbors, const FBoidSceneContext& BoidSceneContext) const
 {
 	FVector SeparationForce = FVector::ZeroVector;
 	int32 NumNeighborhood = 0;
 	const float SeparationRadiusSquared = FMath::Square(SeparationRadius);
 
-	for (const FBoidData& NeighborBoid : Neighbors)
+	for (const FBoidData* NeighborBoid : Neighbors)
 	{
-		if (NeighborBoid.Index == Boid.Index)
+		if (NeighborBoid->Index == Boid.Index)
 		{
 			continue;
 		}
 		
-		FVector DiffVector = Boid.Location - NeighborBoid.Location;
+		FVector DiffVector = Boid.Location - NeighborBoid->Location;
 		
 		// 만약 다른 boid가 거의 겹쳐 있다면 기존 속도 방향에서 매우 작은 크기로의 속도 값을 구한다.
 		if (DiffVector.IsNearlyZero())
@@ -111,24 +111,24 @@ UBoidRule_Alignment::UBoidRule_Alignment()
 	Weight = 0.2f;
 }
 
-FVector UBoidRule_Alignment::CalculateForce_Internal(const FBoidData& Boid, const TArray<FBoidData>& Neighbors, const FBoidSceneContext& BoidSceneContext) const
+FVector UBoidRule_Alignment::CalculateForce_Internal(const FBoidData& Boid, const TArrayView<const FBoidData*> Neighbors, const FBoidSceneContext& BoidSceneContext) const
 {
 	FVector AlignmentForce = FVector::ZeroVector;
 	FVector AverageVelocity = FVector::ZeroVector; // 이웃들의 속도를 다 더할 변수
 	int32 NumNeighborhood = 0;
 	const float AlignmentDistSquared = FMath::Square(AlignmentRadius);
 
-	for (const FBoidData& NeighborBoid : Neighbors)
+	for (const FBoidData* NeighborBoid : Neighbors)
 	{
-		if (NeighborBoid.Index == Boid.Index)
+		if (NeighborBoid->Index == Boid.Index)
 		{
 			continue;
 		}
 		
-		const float DiffDistSquared = (Boid.Location - NeighborBoid.Location).SquaredLength();
+		const float DiffDistSquared = (Boid.Location - NeighborBoid->Location).SquaredLength();
 		if (DiffDistSquared < AlignmentDistSquared)
 		{
-			AverageVelocity += NeighborBoid.Velocity;
+			AverageVelocity += NeighborBoid->Velocity;
 			++NumNeighborhood;
 		}
 	}
@@ -154,7 +154,7 @@ UBoidRule_TendingToPlace::UBoidRule_TendingToPlace()
 	Weight = 0.2f;
 }
 
-FVector UBoidRule_TendingToPlace::CalculateForce_Internal(const FBoidData& Boid, const TArray<FBoidData>& Neighbors, const FBoidSceneContext& BoidSceneContext) const
+FVector UBoidRule_TendingToPlace::CalculateForce_Internal(const FBoidData& Boid, const TArrayView<const FBoidData*> Neighbors, const FBoidSceneContext& BoidSceneContext) const
 {
 	FVector PlaceForce = FVector::ZeroVector;
 	
@@ -183,7 +183,7 @@ void UBoidRule_AvoidanceObstacle::Initialize()
 	Algo::Reverse(FibonacciDirections);
 }
 
-FVector UBoidRule_AvoidanceObstacle::CalculateForce_Internal(const FBoidData& Boid, const TArray<FBoidData>& Neighbors, const FBoidSceneContext& BoidSceneContext) const
+FVector UBoidRule_AvoidanceObstacle::CalculateForce_Internal(const FBoidData& Boid, const TArrayView<const FBoidData*> Neighbors, const FBoidSceneContext& BoidSceneContext) const
 {
 	const UWorld* World = GetWorld();
 	check(IsValid(World));

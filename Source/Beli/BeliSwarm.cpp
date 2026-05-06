@@ -90,13 +90,13 @@ void ABeliSwarm::UpdateBoids(float DeltaTime)
 	
 	const float SearchRadiusSquared = SearchRadius * SearchRadius;
 	
-	// for (int32 i = 0; i < MaxBoidsCount; ++i)
+	// for (int32 i = 0; i < MaxBoidsCount; ++i) ; 최적화를 위해 Multi-Thread 기반 반복문 사용
 	ParallelFor(MaxBoidsCount, [&](int32 i)
 	{
 		const FBoidData& Boid = Boids[i];
 		
 		// 인접한 Grid 영역 탐색
-		TArray<FBoidData> Neighbors;
+		TArray<const FBoidData*, TInlineAllocator<MaxNeighborsNum>> Neighbors;
 		const FSpatialGrid MyGrid = GridHashHelper->GetGridIndex(Boid.Location);
 		for (int32 Z = -1; Z <= 1; ++Z)
 		{
@@ -106,20 +106,28 @@ void ABeliSwarm::UpdateBoids(float DeltaTime)
 				{
 					const FSpatialGrid NeighborGrid(MyGrid.X + X, MyGrid.Y + Y, MyGrid.Z + Z);
 					const int32 TargetHash = GridHashHelper->GetHashKey(NeighborGrid);
-					for (int32 CurrentIndex = CellStartIndex[TargetHash]; CurrentIndex != -1; CurrentIndex = BoidNextIndex[CurrentIndex])
+					for (int32 TargetIndex = CellStartIndex[TargetHash]; TargetIndex != -1; TargetIndex = BoidNextIndex[TargetIndex])
 					{
-						if (CurrentIndex != i)
+						if (TargetIndex != i)
 						{
-							const float DistSquared = FVector::DistSquared(Boid.Location, Boids[CurrentIndex].Location);
+							const float DistSquared = FVector::DistSquared(Boid.Location, Boids[TargetIndex].Location);
 							if (DistSquared < SearchRadiusSquared)
 							{
-								Neighbors.Add(Boids[CurrentIndex]);
+								Neighbors.Add(&Boids[TargetIndex]);
+								
+								// 추가적인 데이터 검색이 필요없을 때 중첩된 Loop문을 전부 종료 (최적화)
+								if (Neighbors.Num() == MaxNeighborsNum)
+								{
+									goto EndSearch;
+								}
 							}
 						}
 					}
 				}
 			}
 		}
+		
+		EndSearch:
 		
 		// 인접한 Grid 영역에서 도출한 Neighbors에 대해서만 계산을 수행
 		FVector CalculatedForce = FVector::ZeroVector;
