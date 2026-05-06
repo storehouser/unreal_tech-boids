@@ -206,18 +206,9 @@ FVector UBoidRule_AvoidanceObstacle::CalculateForce_Internal(const FBoidData& Bo
 	);
 	
 #if !UE_BUILD_SHIPPING
-	if (BoidSceneContext.bIsDebugMode)
+	if (BoidSceneContext.DebugParam > 0 && Boid.Index % BoidSceneContext.DebugParam == 0)
 	{
 		DrawDebugLine(World, Boid.Location, EndPos, FColor::Magenta, false, -1.0f, 0, 2.0f);
-		
-		for (const FVector& RayDir : FibonacciDirections)
-		{
-			// 피보나치 방향을 Boid의 공간으로 변환
-			FVector FibonacciRayDir = Boid.Rotation.RotateVector(RayDir);
-			FVector RayEndPos = Boid.Location + (FibonacciRayDir * AvoidDistance);
-		
-			DrawDebugLine(World, Boid.Location, RayEndPos, FColor::Cyan, false, -1.0f, 1.0f);
-		}
 	}
 #endif
 
@@ -247,7 +238,7 @@ FVector UBoidRule_AvoidanceObstacle::CalculateForce_Internal(const FBoidData& Bo
 		);
 		
 #if !UE_BUILD_SHIPPING
-		if (BoidSceneContext.bIsDebugMode)
+		if (BoidSceneContext.DebugParam > 0 && Boid.Index % BoidSceneContext.DebugParam == 0)
 		{
 			DrawDebugLine(World, Boid.Location, RayEndPos, bHit ? FColor::Red : FColor::Green, false, -1.0f, 0, 3.0f);
 		}
