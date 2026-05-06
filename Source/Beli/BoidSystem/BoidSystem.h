@@ -50,10 +50,10 @@ private:
 	/** */
 	TArray<FTransform> BoidTransforms;
 	
-	/** HashTable 크기 (일반적으로 Boids의 전체 크기 * 2) */
+	/** Hash값을 기반으로 해당 Hash를 가지고 있는 최초의 Boid Index 위치 정보 저장 - HashTable 크기 (일반적으로 Boids의 전체 크기 * 2) */
 	TArray<int32> CellStartIndex;
 	
-	/** Boids의 전체 크기 */
+	/** 해당 Index에 같은 Hash를 가지고 있는 Boid Index 저장 (인덱스 기반 LinkedList) - Boids의 전체 크기 */
 	TArray<int32> BoidNextIndex;	
 	
 	/** 최대 이웃 갯수, Stack 메모리를 사용하는 배열을 위해 Compile 타임에 지정 필요 */

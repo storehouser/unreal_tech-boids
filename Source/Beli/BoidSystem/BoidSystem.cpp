@@ -147,7 +147,7 @@ void FBoidSystem::UpdateBoids_Concurrent(float DeltaTime, const FTransform& Simu
 			}
 			const FVector NewForce = CalculatedForce.GetClampedToMaxSize(MaxForce);
 		
-			// 쓰기 전용인 NextBoids에 값을 적용하고 Transform 획득, 반영
+			// WriteBuffer에 값을 적용하고 Transform 획득, 반영
 			FBoidData& WriteBoid = BoidWriteBuffer[i];
 			WriteBoid.Velocity = (ReadBoid.Velocity + NewForce * DeltaTime).GetClampedToMaxSize(MaxSpeed);
 			WriteBoid.Rotation = FMath::RInterpTo(ReadBoid.Rotation, FRotationMatrix::MakeFromZ(WriteBoid.Velocity.GetSafeNormal()).Rotator(), DeltaTime, 15.f);	// 기본 메쉬가 하늘을 바라보고 있어 Rotation값에서 MakeFormZ 함수를 사용.

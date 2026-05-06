@@ -15,13 +15,8 @@ struct FBoidData
 public:
 	int32 Index = -1;
 	
-	/** 현재 위치 */
 	FVector Location = FVector::ZeroVector;
-	
-	/** 방향 */
 	FRotator Rotation = FRotator::ZeroRotator;
-	
-	/** 이름 방향 및 속력 */
 	FVector Velocity = FVector::ZeroVector;
 	
 public:
@@ -41,7 +36,6 @@ struct FBoidSceneContext
 	GENERATED_BODY()
 	
 	float BoidMaxSpeed;
-	
 	FTransform SimulationSpace;
 	
 #if !UE_BUILD_SHIPPING
