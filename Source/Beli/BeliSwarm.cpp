@@ -5,10 +5,6 @@
 
 #include "Components/InstancedStaticMeshComponent.h"
 
-#include "Beli.h"
-#include "Library/SpatialGridHashHelper.h"
-
-
 
 ABeliSwarm::ABeliSwarm()
 {

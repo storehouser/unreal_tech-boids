@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "BoidSystem/BoidRules.h"
 #include "BoidSystem/BoidSystem.h"
 
 #include "BeliSwarm.generated.h"
