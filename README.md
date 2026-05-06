@@ -1,5 +1,6 @@
 # 🕊️ Beli
-Unreal Engine Boids SimulationAn Unreal Engine project focused on the implementation and performance optimization of the Boids flocking algorithm.(언리얼 엔진 기반의 Boids 군집 알고리즘 구현 및 성능 최적화 프로젝트입니다.)<br><br>
+Unreal Engine Boids SimulationAn Unreal Engine project focused on the implementation and performance optimization of the Boids flocking algorithm.<br>
+언리얼 엔진 기반의 Boids 군집 알고리즘 구현 및 성능 최적화 프로젝트입니다.<br><br>
 
 
 # 📖 Project Overview
