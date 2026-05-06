@@ -34,9 +34,9 @@ void FBoidSystem::Initialize(const FTransform& SimulationSpace)
 		
 		// Swarm이 설치된 위치를 기준으로 랜덤값을 구하기 위해 Local Space 상의 위치 값을 구하고 그 값을 토대로 WorldSpace로 변환.
 		const FVector BoidNormal = FMath::VRand();
-		const FVector RelRandLocation = FVector(FMath::RandRange(-500, 500), FMath::RandRange(-500, 500), FMath::RandRange(-500, 500));
+		const FVector RelRandLocation = FVector(FMath::RandRange(-1000, 1000), FMath::RandRange(-1000, 1000), FMath::RandRange(-1000, 1000));
 		NewBoid.Location = SimulationSpace.TransformPosition(RelRandLocation);
-		NewBoid.Velocity = BoidNormal * FMath::RandRange(0.f, MaxSpeed);
+		NewBoid.Velocity = BoidNormal * FMath::RandRange(0.f, MaxSpeed * 0.5f);
 		NewBoid.Rotation = FRotationMatrix::MakeFromZ(BoidNormal).Rotator();
 		
 		BoidReadBuffer.Emplace(NewBoid);
