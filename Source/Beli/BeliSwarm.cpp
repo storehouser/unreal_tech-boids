@@ -55,7 +55,7 @@ void ABeliSwarm::BeginPlay()
 	
 	NextTransforms.Init(FTransform::Identity, MaxBoidsCount);
 	
-	// TODO 공간 크기는 Rule에서 가장 큰 값으로 가져오거나, 효율적으로 쪼개는 방법을 생각해보자.
+	// TODO SearchRadius는 Rule에서 가장 큰 값으로 가져오거나, 효율적으로 쪼개는 방법을 생각해보자.
 	GridHashHelper = MakeShared<FSpatialGridHashHelper>(SearchRadius, MaxBoidsCount);
 }
 
