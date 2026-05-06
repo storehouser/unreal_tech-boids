@@ -14,12 +14,16 @@ struct FBoidSystem
 	GENERATED_BODY()
 	
 public:
+	/** */
 	void Initialize(const FTransform& SimulationSpace);
 	
+	/** */
 	void UpdateBoids_Concurrent(float DeltaTime, const FTransform& SimulationSpace);
 	
+	/** */
 	const TArray<FTransform>& GetBoidTransforms() const;
 	
+	/** */
 	void SwapBuffers();
 	
 public:
