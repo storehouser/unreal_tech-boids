@@ -45,12 +45,11 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<class UInstancedStaticMeshComponent> InstancedMeshComp;
 	
-	TArray<FBoidData> Boids;
-	TArray<FBoidData> NextBoids;
-	
-protected:
 	UPROPERTY(EditAnywhere, Instanced, Category = "Boids|Rules")
 	TArray<class UBoidRuleBase*> ActiveRules;
+	
+	TArray<FBoidData> Boids;
+	TArray<FBoidData> NextBoids;
 	
 private:
 	TSharedPtr<struct FSpatialGridHashHelper> GridHashHelper;
