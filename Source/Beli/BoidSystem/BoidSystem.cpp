@@ -24,8 +24,8 @@ DECLARE_CYCLE_STAT(TEXT("Parallel Rule Calc"), STAT_BoidsRuleCalc, STATGROUP_Boi
 void FBoidSystem::Initialize(const FTransform& SimulationSpace)
 {
 	// Boids 초기화 - 임의의 값들을 정해준다. 해당 임의 값을 토대로 BoidTransforms을 채운다.
-	// NextBoids에는 Double-Buffer 패턴을 사용하기 위해 똑같은 크기의 Boids 객체들을 준비. 안의 값은 중요치 않지만 같은 크기로 만들기 위해 복사 처리
-	Boids.Reserve(MaxBoidCount);
+	// BoidWriteBuffer에는 Double-Buffer 패턴을 사용하기 위해 BoidReadBuffer와 똑같은 크기의 Boids 객체들을 할당하여 준비한다.
+	BoidReadBuffer.Reserve(MaxBoidCount);
 	BoidTransforms.Reserve(MaxBoidCount);
 	for (int32 i = 0; i < MaxBoidCount; ++i)
 	{
@@ -39,12 +39,12 @@ void FBoidSystem::Initialize(const FTransform& SimulationSpace)
 		NewBoid.Velocity = BoidNormal * FMath::RandRange(0.f, MaxSpeed);
 		NewBoid.Rotation = FRotationMatrix::MakeFromZ(BoidNormal).Rotator();
 		
-		Boids.Emplace(NewBoid);
+		BoidReadBuffer.Emplace(NewBoid);
 		BoidTransforms.Emplace(NewBoid.GetTransform());
 	}
-	NextBoids = Boids;
+	BoidWriteBuffer = BoidReadBuffer;
 	
-	// 규칙 초기화
+	// 규칙들 초기화
 	for (UBoidRuleBase* RuleBase : ActiveRules)
 	{
 		RuleBase->Initialize();
@@ -68,7 +68,7 @@ void FBoidSystem::UpdateBoids_Concurrent(float DeltaTime, const FTransform& Simu
 		
 		for (int32 i = 0; i < MaxBoidCount; ++i)
 		{
-			const int32 HashKey = GridHashHelper->GetHashKeyFromLocation(Boids[i].Location);
+			const int32 HashKey = GridHashHelper->GetHashKeyFromLocation(BoidReadBuffer[i].Location);
 		
 			// 고정된 배열의 크기에서 같은 Hash를 가지는 Boid Index 값을 저장 - 배열 기반의 LinkedList
 			BoidNextIndex[i] = CellStartIndex[HashKey];
@@ -103,11 +103,11 @@ void FBoidSystem::UpdateBoids_Concurrent(float DeltaTime, const FTransform& Simu
 		// for (int32 i = 0; i < MaxBoidsCount; ++i) 대신 ParallelFor를 사용하여 Multi-Thread 기반 반복문 사용 (최적화)
 		ParallelFor(MaxBoidCount, [&](int32 i)
 		{
-			const FBoidData& Boid = Boids[i];
+			const FBoidData& ReadBoid = BoidReadBuffer[i];
 		
 			// 인접한 Grid 영역 탐색
 			TArray<const FBoidData*, TInlineAllocator<MaxNeighborsNum>> Neighbors;	// TInlineAllocator를 사용하여 배열의 메모리를 Heap대신 Stack 사용.  
-			const FSpatialGrid MyGrid = GridHashHelper->GetGridIndex(Boid.Location);
+			const FSpatialGrid MyGrid = GridHashHelper->GetGridIndex(ReadBoid.Location);
 			for (int32 Z = -1; Z <= 1; ++Z)
 			{
 				for (int32 Y = -1; Y <= 1; ++Y)
@@ -120,10 +120,10 @@ void FBoidSystem::UpdateBoids_Concurrent(float DeltaTime, const FTransform& Simu
 						{
 							if (TargetIndex != i)
 							{
-								const float DistSquared = FVector::DistSquared(Boid.Location, Boids[TargetIndex].Location);
+								const float DistSquared = FVector::DistSquared(ReadBoid.Location, BoidReadBuffer[TargetIndex].Location);
 								if (DistSquared < SearchRadiusSquared)
 								{
-									Neighbors.Add(&Boids[TargetIndex]);
+									Neighbors.Add(&BoidReadBuffer[TargetIndex]);
 								
 									// 추가적인 데이터 검색이 필요없을 때 중첩된 Loop문을 전부 종료 (최적화)
 									if (Neighbors.Num() == MaxNeighborsNum)
@@ -143,17 +143,17 @@ void FBoidSystem::UpdateBoids_Concurrent(float DeltaTime, const FTransform& Simu
 			FVector CalculatedForce = FVector::ZeroVector;
 			for (const UBoidRuleBase* ActiveRule : ActiveRules)
 			{
-				CalculatedForce += ActiveRule->CalculateForce(Boid, Neighbors, Context);
+				CalculatedForce += ActiveRule->CalculateForce(ReadBoid, Neighbors, Context);
 			}
 			const FVector NewForce = CalculatedForce.GetClampedToMaxSize(MaxForce);
 		
 			// 쓰기 전용인 NextBoids에 값을 적용하고 Transform 획득, 반영
-			FBoidData& NextBoid = NextBoids[i];
-			NextBoid.Velocity = (Boid.Velocity + NewForce * DeltaTime).GetClampedToMaxSize(MaxSpeed);
-			NextBoid.Rotation = FMath::RInterpTo(Boid.Rotation, FRotationMatrix::MakeFromZ(NextBoid.Velocity.GetSafeNormal()).Rotator(), DeltaTime, 15.f);	// 기본 메쉬가 하늘을 바라보고 있어 Rotation값에서 MakeFormZ 함수를 사용.
-			NextBoid.Location = Boid.Location + (NextBoid.Velocity * DeltaTime);
+			FBoidData& WriteBoid = BoidWriteBuffer[i];
+			WriteBoid.Velocity = (ReadBoid.Velocity + NewForce * DeltaTime).GetClampedToMaxSize(MaxSpeed);
+			WriteBoid.Rotation = FMath::RInterpTo(ReadBoid.Rotation, FRotationMatrix::MakeFromZ(WriteBoid.Velocity.GetSafeNormal()).Rotator(), DeltaTime, 15.f);	// 기본 메쉬가 하늘을 바라보고 있어 Rotation값에서 MakeFormZ 함수를 사용.
+			WriteBoid.Location = ReadBoid.Location + (WriteBoid.Velocity * DeltaTime);
 		
-			BoidTransforms[i] = NextBoid.GetTransform();
+			BoidTransforms[i] = WriteBoid.GetTransform();
 		}, ParallelFlag);
 	}
 }
@@ -165,5 +165,5 @@ const TArray<FTransform>& FBoidSystem::GetBoidTransforms() const
 
 void FBoidSystem::SwapBuffers()
 {
-	Swap(Boids, NextBoids);
+	Swap(BoidReadBuffer, BoidWriteBuffer);
 }
