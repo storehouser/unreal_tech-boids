@@ -131,7 +131,7 @@ protected:
 	
 public:
 	UPROPERTY(EditAnywhere, Category = "Boids")
-	float BoidRadius = 50.f;
+	float BoidRadius = 100.f;
 	
 	UPROPERTY(EditAnywhere, Category = "Boids")
 	float AvoidDistance = 600.f;
@@ -144,4 +144,6 @@ public:
 	
 private:
 	TArray<FVector> FibonacciDirections;
+	
+	FCollisionShape SphereShape;
 };

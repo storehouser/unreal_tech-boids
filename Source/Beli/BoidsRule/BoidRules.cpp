@@ -178,9 +178,9 @@ void UBoidRule_AvoidanceObstacle::Initialize()
 {
 	Super::Initialize();
 	
-	// 충돌 검사를 위한 피보나치 레이를 캐싱 - 약간 뒤쪽까지 검사. 충돌이 걸리면 바로 뒤쪽 방향부터 찾아보기 위해 배열을 뒤집어 준다.
+	// 충돌 검사를 위한 피보나치 레이를 캐싱
 	FibonacciDirections = UBoidsFunctionLibrary::GetFibonacciDirections(NumRays, MaxRayDegree);
-	Algo::Reverse(FibonacciDirections);
+	SphereShape = FCollisionShape::MakeSphere(BoidRadius); // 크기(여유 공간)만큼의 구형
 }
 
 FVector UBoidRule_AvoidanceObstacle::CalculateForce_Internal(const FBoidData& Boid, const TArrayView<const FBoidData*> Neighbors, const FBoidSceneContext& BoidSceneContext) const
@@ -191,7 +191,6 @@ FVector UBoidRule_AvoidanceObstacle::CalculateForce_Internal(const FBoidData& Bo
 
 	// 1. 가장 기본인 '정면'으로 먼저 두꺼운 구(Sphere)를 던져봅니다.
 	FHitResult HitResult;
-	FCollisionShape SphereShape = FCollisionShape::MakeSphere(BoidRadius); // 새의 크기(여유 공간)만큼의 구형
     
 	// 이동 방향 전방으로 AvoidDistance 만큼 검사
 	const FVector ForwardDir = Boid.Velocity.GetSafeNormal();
@@ -206,9 +205,23 @@ FVector UBoidRule_AvoidanceObstacle::CalculateForce_Internal(const FBoidData& Bo
 		SphereShape
 	);
 	
-	// DrawDebugLine(World, Boid.Location, EndPos, bHitForward ? FColor::Red : FColor::Green, false, -1.0f, 0, 2.0f);
+#if !UE_BUILD_SHIPPING
+	if (BoidSceneContext.bIsDebugMode)
+	{
+		DrawDebugLine(World, Boid.Location, EndPos, FColor::Magenta, false, -1.0f, 0, 2.0f);
+		
+		for (const FVector& RayDir : FibonacciDirections)
+		{
+			// 피보나치 방향을 Boid의 공간으로 변환
+			FVector FibonacciRayDir = Boid.Rotation.RotateVector(RayDir);
+			FVector RayEndPos = Boid.Location + (FibonacciRayDir * AvoidDistance);
+		
+			DrawDebugLine(World, Boid.Location, RayEndPos, FColor::Cyan, false, -1.0f, 1.0f);
+		}
+	}
+#endif
 
-	// 2. 정면에 아무것도 없다면 굳이 피보나치 연산을 할 필요가 없습니다!
+	// 2. 정면에 아무것도 없다면 굳이 피보나치 방향으로 추가적인 충돌 검사가 불필요.
 	if (!bHitForward) 
 	{
 		return AvoidanceForce; 
@@ -217,9 +230,6 @@ FVector UBoidRule_AvoidanceObstacle::CalculateForce_Internal(const FBoidData& Bo
 	// 3. 정면에 무언가 있다면, 비로소 피보나치 방향 배열을 순회하며 '구멍(빈 공간)'을 찾습니다.
 	FVector EscapeDirection = FVector::ZeroVector;
 	bool bFoundEscape = false;
-
-	// const FQuat ManagerWorldQuat = ManagerWorldTransform.GetRotation();
-	// const FRotator BoidWorldRotation = (ManagerWorldQuat * Boid.Rotation.Quaternion()).Rotator();
 	
 	for (const FVector& RayDir : FibonacciDirections)
 	{
@@ -236,9 +246,14 @@ FVector UBoidRule_AvoidanceObstacle::CalculateForce_Internal(const FBoidData& Bo
 			SphereShape
 		);
 		
-		// DrawDebugLine(World, Boid.Location, RayEndPos, bHit ? FColor::Red : FColor::Green, false, -1.0f, 0, 2.0f);
+#if !UE_BUILD_SHIPPING
+		if (BoidSceneContext.bIsDebugMode)
+		{
+			DrawDebugLine(World, Boid.Location, RayEndPos, bHit ? FColor::Red : FColor::Green, false, -1.0f, 0, 3.0f);
+		}
+#endif
 
-		// 부딪히지 않은 최초의 안전한 방향을 찾으면 탐색 종료! (가장 정면과 가까운 안전한 길)
+		// 부딪히지 않은 최초의 안전한 방향을 찾으면 탐색 종료!
 		if (!bHit)
 		{
 			EscapeDirection = FibonacciRayDir;

@@ -43,5 +43,9 @@ struct FBoidSceneContext
 	float BoidMaxSpeed;
 	
 	FTransform ManagerTransform;
+	
+#if !UE_BUILD_SHIPPING
+	bool bIsDebugMode;
+#endif
 };
 

@@ -23,8 +23,8 @@ TArray<FVector> UBoidsFunctionLibrary::GetFibonacciDirections(int32 NumRays, flo
 	
 	for (int32 i = 0; i < NumRays; ++i)
 	{
-		// t: [0.0, 1.0)
-		const float t = StaticCast<float>(i) / StaticCast<float>(NumRays);
+		// t: (0.0, 1.0]
+		const float t = StaticCast<float>(i + 1) / StaticCast<float>(NumRays);
 		const float X = 1.0f - (t * RangeX);
 		const float Radius = FMath::Sqrt(1.0f - (X * X));
 		
