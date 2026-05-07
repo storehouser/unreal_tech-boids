@@ -20,11 +20,12 @@ public:
 	virtual void Initialize() { }
 	
 	/** 각 룰에서 구한 값을 토대로 Weight 값을 곱해서 최종 값 */
-	virtual FVector CalculateForce(const FBoidData& Boid, const TArrayView<const FBoidData*> Neighbors, const FBoidSceneContext& BoidSceneContext) const;
+	//virtual FVector CalculateForce(const FBoidData& Boid, const TArrayView<const FBoidData*> Neighbors, const FBoidSceneContext& BoidSceneContext) const;
+	virtual FVector3f CalculateForce(const FBoidBuffer& BoidBuffer, int32 MyIndex, TArrayView<int32> NeighborIndices, const FBoidSceneContext& BoidSceneContext) const;
 	
 protected:
 	/** 내부 룰 안에서 계산하여 최종 Force 값 계산 */
-	virtual FVector CalculateForce_Internal(const FBoidData& Boid, const TArrayView<const FBoidData*> Neighbors, const FBoidSceneContext& BoidSceneContext) const { return FVector::ZeroVector; }
+	virtual FVector3f CalculateForce_Internal(const FBoidBuffer& BoidBuffer, int32 MyIndex, TArrayView<int32> NeighborIndices, const FBoidSceneContext& BoidSceneContext) const { return FVector3f::ZeroVector; }
 	
 public:
 	UPROPERTY(EditAnywhere, Category = "Boids")
@@ -44,7 +45,7 @@ public:
 	UBoidRule_Cohesion();
 	
 protected:
-	virtual FVector CalculateForce_Internal(const FBoidData& Boid, const TArrayView<const FBoidData*> Neighbors, const FBoidSceneContext& BoidSceneContext) const override;
+	virtual FVector3f CalculateForce_Internal(const FBoidBuffer& BoidBuffer, int32 MyIndex, TArrayView<int32> NeighborIndices, const FBoidSceneContext& BoidSceneContext) const override;
 	
 public:
 	UPROPERTY(EditAnywhere, Category = "Boids")
@@ -66,7 +67,7 @@ public:
 	UBoidRule_Separation();
 	
 protected:
-	virtual FVector CalculateForce_Internal(const FBoidData& Boid, const TArrayView<const FBoidData*> Neighbors, const FBoidSceneContext& BoidSceneContext) const override;
+	virtual FVector3f CalculateForce_Internal(const FBoidBuffer& BoidBuffer, int32 MyIndex, TArrayView<int32> NeighborIndices, const FBoidSceneContext& BoidSceneContext) const override;
 	
 public:
 	UPROPERTY(EditAnywhere, Category = "Boids")
@@ -86,7 +87,7 @@ public:
 	UBoidRule_Alignment();
 	
 protected:
-	virtual FVector CalculateForce_Internal(const FBoidData& Boid, const TArrayView<const FBoidData*> Neighbors, const FBoidSceneContext& BoidSceneContext) const override;
+	virtual FVector3f CalculateForce_Internal(const FBoidBuffer& BoidBuffer, int32 MyIndex, TArrayView<int32> NeighborIndices, const FBoidSceneContext& BoidSceneContext) const override;
 	
 public:
 	UPROPERTY(EditAnywhere, Category = "Boids")
@@ -105,11 +106,11 @@ public:
 	UBoidRule_TendingToPlace();
 	
 protected:
-	virtual FVector CalculateForce_Internal(const FBoidData& Boid, const TArrayView<const FBoidData*> Neighbors, const FBoidSceneContext& BoidSceneContext) const override;
+	virtual FVector3f CalculateForce_Internal(const FBoidBuffer& BoidBuffer, int32 MyIndex, TArrayView<int32> NeighborIndices, const FBoidSceneContext& BoidSceneContext) const override;
 	
 public:
 	UPROPERTY(EditAnywhere, Category = "Boids")
-	FVector PlaceLocation = FVector::ZeroVector;
+	FVector3f PlaceLocation = FVector3f::ZeroVector;
 };
 
 
@@ -127,7 +128,7 @@ public:
 	virtual void Initialize() override;
 	
 protected:
-	virtual FVector CalculateForce_Internal(const FBoidData& Boid, const TArrayView<const FBoidData*> Neighbors, const FBoidSceneContext& BoidSceneContext) const override;
+	virtual FVector3f CalculateForce_Internal(const FBoidBuffer& BoidBuffer, int32 MyIndex, TArrayView<int32> NeighborIndices, const FBoidSceneContext& BoidSceneContext) const override;
 	
 public:
 	UPROPERTY(EditAnywhere, Category = "Boids")

@@ -10,7 +10,7 @@ FSpatialGridHashHelper::FSpatialGridHashHelper(float InCellSize, int32 TotalNums
 	HashTableSize = TotalNums * 2;
 }
 
-FSpatialGrid FSpatialGridHashHelper::GetGridIndex(const FVector& Location) const
+FSpatialGrid FSpatialGridHashHelper::GetGridIndex(const FVector3f& Location) const
 {
 	return FSpatialGrid(FMath::FloorToInt(Location.X / CellSize), FMath::FloorToInt(Location.Y / CellSize), FMath::FloorToInt(Location.Z / CellSize));
 }
@@ -25,7 +25,7 @@ int32 FSpatialGridHashHelper::GetHashKey(const FSpatialGrid& Grid) const
 	return FMath::Abs(Hash) % HashTableSize;
 }
 
-int32 FSpatialGridHashHelper::GetHashKeyFromLocation(const FVector& Location) const
+int32 FSpatialGridHashHelper::GetHashKeyFromLocation(const FVector3f& Location) const
 {
 	return GetHashKey(GetGridIndex(Location));
 }

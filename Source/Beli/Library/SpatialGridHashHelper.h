@@ -14,9 +14,9 @@ struct FSpatialGridHashHelper
 public:
 	FSpatialGridHashHelper(float InCellSize, int32 TotalNums);
 	
-	FSpatialGrid GetGridIndex(const FVector& Location) const;
+	FSpatialGrid GetGridIndex(const FVector3f& Location) const;
 	int32 GetHashKey(const FSpatialGrid& Grid) const;
-	int32 GetHashKeyFromLocation(const FVector& Location) const;
+	int32 GetHashKeyFromLocation(const FVector3f& Location) const;
 	
 	int32 GetHashSize() const { return HashTableSize; }
 	
