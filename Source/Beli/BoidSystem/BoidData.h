@@ -8,10 +8,12 @@ struct FBoidBuffer
 {
 	
 public:
+	void SetNumUninitialized(int32 MaxBoidCount);
 	void Reserve(int32 MaxBoidCount);
 	
+	// TODO @Auggie const &로 바꾸자...
 	void Add(int32 InID, FVector3f InLocation, FRotator3f InRotation, FVector3f InVelocity);
-	void SetData(int32 InIndex, int32 InID, FVector3f InLocation, FRotator3f InRotation, FVector3f InVelocity);
+	void SetBoidData(int32 InIndex, FVector3f InLocation, FRotator3f InRotation, FVector3f InVelocity);
 	
 	FORCEINLINE int32 GetID(int32 Index) const { check (Index < NumBufferSize); return BoidIDs[Index]; }
 	FORCEINLINE FVector3f GetLocation(int32 Index) const { check(Index < NumBufferSize); return Locations[Index]; }
@@ -21,6 +23,18 @@ public:
 	FORCEINLINE FTransform GetTransform(int32 Index) const
 	{
 		return FTransform(FRotator(Rotations[Index]), FVector(Locations[Index]), FVector::OneVector * 0.5f);	// TEMP Scale은 일단 0.5 임시로
+	}
+	
+	FORCEINLINE void CopyBoidDataFrom(int32 DestIndex, const FBoidBuffer& SourceBuffer, int32 SourceIndex)
+	{
+		check(NumBufferSize == SourceBuffer.NumBufferSize);
+		check(DestIndex < NumBufferSize);
+		check(SourceIndex < SourceBuffer.NumBufferSize);
+		
+		BoidIDs[DestIndex] = SourceBuffer.BoidIDs[SourceIndex];
+		Locations[DestIndex] = SourceBuffer.Locations[SourceIndex];
+		Rotations[DestIndex] = SourceBuffer.Rotations[SourceIndex];
+		Velocities[DestIndex] = SourceBuffer.Velocities[SourceIndex];
 	}
 	
 private:

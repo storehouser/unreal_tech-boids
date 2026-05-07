@@ -1,6 +1,16 @@
+
 #include "BoidData.h"
 
-#include "NiagaraRibbonRendererProperties.h"
+
+void FBoidBuffer::SetNumUninitialized(int32 MaxBoidCount)
+{
+	BoidIDs.SetNumUninitialized(MaxBoidCount);
+	Locations.SetNumUninitialized(MaxBoidCount);
+	Rotations.SetNumUninitialized(MaxBoidCount);
+	Velocities.SetNumUninitialized(MaxBoidCount);
+	
+	NumBufferSize = MaxBoidCount;
+}
 
 void FBoidBuffer::Reserve(int32 MaxBoidCount)
 {
@@ -20,11 +30,10 @@ void FBoidBuffer::Add(int32 InID, FVector3f InLocation, FRotator3f InRotation, F
 	++NumBufferSize;
 }
 
-void FBoidBuffer::SetData(int32 InIndex, int32 InID, FVector3f InLocation, FRotator3f InRotation, FVector3f InVelocity)
+void FBoidBuffer::SetBoidData(int32 InIndex, FVector3f InLocation, FRotator3f InRotation, FVector3f InVelocity)
 {
 	check(InIndex < NumBufferSize);
 	
-	BoidIDs[InIndex] = InID;
 	Locations[InIndex] = InLocation;
 	Rotations[InIndex] = InRotation;
 	Velocities[InIndex] = InVelocity;

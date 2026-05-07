@@ -40,8 +40,5 @@ void ABeliSwarm::Tick(float DeltaTime)
 	// 2. 갱신된 위치, 회전 등을 얻어와 ISMC에 적용
 	const TArray<FTransform>& BoidTransforms = BoidSystem.GetBoidTransforms();
 	InstancedMeshComp->BatchUpdateInstancesTransforms(0, BoidTransforms, true, true, false);
-	
-	// 3. System 내부에 있는 Boid 객체들의 배열 정보를 Swap 처리
-	BoidSystem.SwapBuffers();
 }
 

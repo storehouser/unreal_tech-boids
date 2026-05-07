@@ -24,18 +24,12 @@ FVector3f UBoidRule_Cohesion::CalculateForce_Internal(const FBoidBuffer& BoidBuf
 	int32 NumNeighborhood = 0;
 	const float CohesionDistSquared = FMath::Square(CohesionRadius);
 	
-	const FVector3f MyBoidLocation = BoidBuffer.GetLocation(MyIndex);
-
+	const FVector3f& MyBoidLocation = BoidBuffer.GetLocation(MyIndex);
 	for (int32 NeighborIndex : NeighborIndices)
 	{
-		if (BoidBuffer.GetID(MyIndex) == BoidBuffer.GetID(NeighborIndex))
-		{
-			continue;
-		}
+		const FVector3f& NeighborLocation = BoidBuffer.GetLocation(NeighborIndex);
 		
-		const FVector3f NeighborLocation = BoidBuffer.GetLocation(NeighborIndex);
-		
-		const float DiffDistSquared = (MyBoidLocation - NeighborLocation).SquaredLength();
+		const float DiffDistSquared = FVector3f::DistSquared(MyBoidLocation, NeighborLocation);
 		if (DiffDistSquared < CohesionDistSquared)
 		{
 			CenterOfMass += NeighborLocation;
@@ -75,19 +69,15 @@ FVector3f UBoidRule_Separation::CalculateForce_Internal(const FBoidBuffer& BoidB
 	int32 NumNeighborhood = 0;
 	const float SeparationRadiusSquared = FMath::Square(SeparationRadius);
 	
+	const FVector3f& MyBoidLocation = BoidBuffer.GetLocation(MyIndex);
 	for (int32 NeighborIndex : NeighborIndices)
 	{
-		if (BoidBuffer.GetID(MyIndex) == BoidBuffer.GetID(NeighborIndex))
-		{
-			continue;
-		}
+		FVector3f DiffVector = MyBoidLocation - BoidBuffer.GetLocation(NeighborIndex);
 		
-		FVector3f DiffVector = BoidBuffer.GetLocation(MyIndex) - BoidBuffer.GetLocation(NeighborIndex);
-		
-		// 만약 다른 boid가 거의 겹쳐 있다면 랜덤한 방향의 매우 작은 크기로의 속도 값을 구한다.
+		// 만약 다른 boid가 거의 겹쳐 있다면 랜덤한 방향의 작은 크기로의 속도 값을 구한다.
 		if (DiffVector.IsNearlyZero())
 		{
-			DiffVector = FVector3f(FMath::VRand()) * 0.01f;
+			DiffVector = FVector3f(FMath::VRand());
 		}
 		
 		if (DiffVector.SizeSquared() < SeparationRadiusSquared)
@@ -95,7 +85,7 @@ FVector3f UBoidRule_Separation::CalculateForce_Internal(const FBoidBuffer& BoidB
 			// Diff 길이를 SeparationRadius를 나눠 정규화 처리한다. (거리에 반비례하여 Force가 커짐)
 			// DiffVector.GetUnsafeNormal() / ((DiffVector.Length() / SeparationRadius)
 			// == (DiffVector / DiffVector.Length()) / ((DiffVector.Length() / SeparationRadius)
-			SeparationForce += DiffVector * (SeparationRadius / DiffVector.SizeSquared());
+			SeparationForce += DiffVector * (SeparationRadius / FMath::Max(DiffVector.SizeSquared(), 1.0f));
 			++NumNeighborhood;
 		}
 	}
@@ -121,16 +111,11 @@ FVector3f UBoidRule_Alignment::CalculateForce_Internal(const FBoidBuffer& BoidBu
 	FVector3f AverageVelocity = FVector3f::ZeroVector; // 이웃들의 속도를 다 더할 변수
 	int32 NumNeighborhood = 0;
 	const float AlignmentDistSquared = FMath::Square(AlignmentRadius);
-
-	//for (const FBoidData* NeighborBoid : Neighbors)
+	
+	const FVector3f& MyBoidLocation = BoidBuffer.GetLocation(MyIndex);
 	for (int32 NeighborIndex : NeighborIndices)
 	{
-		if (BoidBuffer.GetID(MyIndex) == BoidBuffer.GetID(NeighborIndex))
-		{
-			continue;
-		}
-		
-		const float DiffDistSquared = (BoidBuffer.GetLocation(MyIndex) - BoidBuffer.GetLocation(NeighborIndex)).SquaredLength();
+		const float DiffDistSquared = FVector3f::DistSquared(MyBoidLocation, BoidBuffer.GetLocation(NeighborIndex));
 		if (DiffDistSquared < AlignmentDistSquared)
 		{
 			AverageVelocity += BoidBuffer.GetVelocity(NeighborIndex);
@@ -174,6 +159,7 @@ FVector3f UBoidRule_TendingToPlace::CalculateForce_Internal(const FBoidBuffer& B
 	return PlaceForce;
 }
 
+
 UBoidRule_AvoidanceObstacle::UBoidRule_AvoidanceObstacle()
 {
 	Weight = 3500.f;
@@ -194,27 +180,28 @@ FVector3f UBoidRule_AvoidanceObstacle::CalculateForce_Internal(const FBoidBuffer
 	check(IsValid(World));
 	FVector3f AvoidanceForce = FVector3f::ZeroVector;
 	
-	// 0. 선두를 찾는다.
+	// 0. 선두를 찾는다. !! TODO @Auggie 추가적인 최적화 필요
 #if 1
-	const FVector3f MyBoidLocation = BoidBuffer.GetLocation(MyIndex);
-	const FVector3f MyBoidVelocity = BoidBuffer.GetVelocity(MyIndex);
-	const FVector3f MyBoidDirection = MyBoidVelocity.GetSafeNormal();
+	const FVector3f& MyBoidLocation = BoidBuffer.GetLocation(MyIndex);
+	const FVector3f& MyBoidVelocity = BoidBuffer.GetVelocity(MyIndex);
+	const FVector3f& MyBoidDirection = MyBoidVelocity.GetSafeNormal();
 	bool bIsLeader = true;
 	for (int32 NeighborIndex : NeighborIndices)
 	{
 		FVector3f ToNeighbor = BoidBuffer.GetLocation(NeighborIndex) - MyBoidLocation;
 		
 		const float DistSquared = ToNeighbor.SizeSquared();
-		if (DistSquared > FMath::Square(AvoidDistance * 0.5f))
+		if (FMath::IsNearlyZero(DistSquared) || DistSquared > FMath::Square(AvoidDistance * 0.5f))
 		{
-			// 충돌 영역의 절반의 영역안에 해당 Boid 자체가 없으면 고려하지 않는다.
+			// 충돌 영역 절반 거리안에 해당 Boid 자체가 없거나 너무 가까우면 Leader로 간주할 수 있다.
 			continue;
 		}
 		
-		// 내 속도와 이웃으로 향하는 방향이 양수이면 대략적으로 같은 범위에 있는 것
-		if (FVector3f::DotProduct(MyBoidVelocity, ToNeighbor) > 0.f)
+		// 내 속도의 방향과 이웃으로 향하는 방향이 거의 같으면 
+		const FVector3f ToNeighborDirection = ToNeighbor.GetSafeNormal();
+		if (FVector3f::DotProduct(MyBoidDirection, ToNeighborDirection) > 0.75f)
         {
-            const FVector3f NeighborVel = BoidBuffer.GetVelocity(NeighborIndex);
+            const FVector3f& NeighborVel = BoidBuffer.GetVelocity(NeighborIndex);
             const FVector3f NeighborDir = NeighborVel.GetSafeNormal();
 			
             const float AlignmentDot = FVector3f::DotProduct(MyBoidDirection, NeighborDir);

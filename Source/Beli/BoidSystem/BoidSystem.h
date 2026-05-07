@@ -41,9 +41,6 @@ protected:
 	UPROPERTY(EditAnywhere, Instanced, Category = "Rules")
 	TArray<class UBoidRuleBase*> ActiveRules;
 	
-	// TArray<FBoidData> BoidReadBuffer;
-	// TArray<FBoidData> BoidWriteBuffer;
-	
 	FBoidBuffer BoidReadBuffer;
 	FBoidBuffer BoidWriteBuffer;
 	
@@ -57,11 +54,21 @@ private:
 	TArray<int32> CellStartIndex;
 	
 	/** 해당 Index에 같은 Hash를 가지고 있는 Boid Index 저장 (인덱스 기반 LinkedList) - Boids의 전체 크기 */
-	TArray<int32> BoidNextIndex;	
+	//TArray<int32> BoidNextIndex;	
+	
+	TArray<int32> CellBoidCount;
 	
 	/** 최대 이웃 갯수, Stack 메모리를 사용하는 배열을 위해 Compile 타임에 지정 필요 */
-	constexpr static int32 MaxNeighborsNum = 32;
+	constexpr static int32 MaxNeighborsNum = 16;
 	
 	// FIXME - Grid를 촘촘하게 나눠서 검색할 수 있게 하거나 실제 Rule에서 가장 큰 값을 가져와서 취합해야 함
 	float SearchRadius = 500.f;
+	
+	struct FBoidHashPair
+	{
+		int32 Index;
+		int32 HashKey;
+	};
+	
+	TArray<FBoidHashPair> HashPairs;
 };
