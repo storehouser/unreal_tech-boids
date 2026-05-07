@@ -25,24 +25,24 @@ void FBoidSystem::Initialize(const FTransform& SimulationSpace)
 {
 	// Boids 초기화 - 임의의 값들을 정해준다. 해당 임의 값을 토대로 BoidTransforms을 채운다.
 	// BoidWriteBuffer에는 Double-Buffer 패턴을 사용하기 위해 BoidReadBuffer와 똑같은 크기의 Boids 객체들을 할당하여 준비한다.
-	BoidReadBuffer.Reserve(MaxBoidCount);
+	BoidWriteBuffer.Reserve(MaxBoidCount);
 	BoidTransforms.Reserve(MaxBoidCount);
 	for (int32 i = 0; i < MaxBoidCount; ++i)
 	{
-		FBoidData NewBoid;
-		NewBoid.Index = i;
+		int32 ID = i + 1;
 		
 		// Swarm이 설치된 위치를 기준으로 랜덤값을 구하기 위해 Local Space 상의 위치 값을 구하고 그 값을 토대로 WorldSpace로 변환.
 		const FVector BoidNormal = FMath::VRand();
 		const FVector RelRandLocation = FVector(FMath::RandRange(-1000, 1000), FMath::RandRange(-1000, 1000), FMath::RandRange(-1000, 1000));
-		NewBoid.Location = SimulationSpace.TransformPosition(RelRandLocation);
-		NewBoid.Velocity = BoidNormal * FMath::RandRange(0.f, MaxSpeed * 0.5f);
-		NewBoid.Rotation = FRotationMatrix::MakeFromZ(BoidNormal).Rotator();
+		const FVector3f NewLocation = FVector3f(SimulationSpace.TransformPosition(RelRandLocation));
+		const FVector3f NewVelocity = FVector3f(BoidNormal * FMath::RandRange(0.f, MaxSpeed * 0.5f));
+		const FRotator3f NewRotation = FRotator3f(FRotationMatrix::MakeFromZ(BoidNormal).Rotator());
 		
-		BoidReadBuffer.Emplace(NewBoid);
-		BoidTransforms.Emplace(NewBoid.GetTransform());
+		BoidWriteBuffer.Add(ID, NewLocation, NewRotation, NewVelocity);
+		BoidTransforms.Emplace(BoidWriteBuffer.GetTransform(i));
 	}
-	BoidWriteBuffer = BoidReadBuffer;
+	
+	BoidReadBuffer = BoidWriteBuffer;
 	
 	// 규칙들 초기화
 	for (UBoidRuleBase* RuleBase : ActiveRules)

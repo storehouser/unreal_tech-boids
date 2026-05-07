@@ -41,8 +41,11 @@ protected:
 	UPROPERTY(EditAnywhere, Instanced, Category = "Rules")
 	TArray<class UBoidRuleBase*> ActiveRules;
 	
-	TArray<FBoidData> BoidReadBuffer;
-	TArray<FBoidData> BoidWriteBuffer;
+	// TArray<FBoidData> BoidReadBuffer;
+	// TArray<FBoidData> BoidWriteBuffer;
+	
+	FBoidBuffer BoidReadBuffer;
+	FBoidBuffer BoidWriteBuffer;
 	
 	TSharedPtr<struct FSpatialGridHashHelper> GridHashHelper;
 	
