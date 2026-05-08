@@ -3,7 +3,6 @@
 
 #include "Beli.h"
 #include "BoidRules.h"
-#include "HLSLTypeAliases.h"
 
 #include "Library/SpatialGridHashHelper.h"
 
@@ -13,13 +12,15 @@ namespace BeliConsole
 	static TAutoConsoleVariable CVarShowSweepTest(
 	TEXT("Boids.ShowSweepTest"),
 	0, // 기본값: 0 (디버그 끄기, 멀티스레드 켜기), 
-	TEXT("Draw debug lines for Boids. 0=Off(MultiThread), N > 0 = On(ForceSingleThread)(DebugParam)"),
+	TEXT("Draw debug lines for Boids. 0=Off(MultiThread), N > 0 = On (ForceSingleThread)(DebugParam)"),
 	ECVF_Cheat);
 	
-	static TAutoConsoleVariable CVarShowBoidGrid(
-	TEXT("Boid.ShowGrid"),                // 콘솔 창에 입력할 명령어 이름
+	static TAutoConsoleVariable CVarBoidGridDensityThreshold(
+	TEXT("Boid.GridDensityThreshold"),
 	0,
-	TEXT("Toggle Spatial Hash Grid Debug Drawing. 0: Off, 1: On"), // 명령어 설명 (콘솔 창에서 ? 칠 때 나옴)
+	TEXT("Threshold percentage for Spatial Hash Grid debug drawing.\n")
+	TEXT("  0     : Disable grid debug drawing.\n")
+	TEXT("  1~100 : Draw grid cells where boid density exceeds this percentage (%)."), 
 	ECVF_Cheat);
 }
 
@@ -190,10 +191,15 @@ void FBoidSystem::UpdateBoids_Concurrent(float DeltaTime, const FTransform& Simu
 	SwapBuffers();
 	
 #if !UE_BUILD_SHIPPING
-	const bool bIsShowingBoid = BeliConsole::CVarShowBoidGrid.GetValueOnGameThread() != 0;
+	const bool bIsShowingBoid = BeliConsole::CVarBoidGridDensityThreshold.GetValueOnGameThread() > 0;
 	if (bIsShowingBoid)
 	{
 		ShowDebugGrid();	
+	}
+	
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(1000, 0.0f, FColor::Green, FString::Printf(TEXT("Boid System (MaxBoidCount: %d)"), MaxBoidCount));
 	}
 #endif
 }
@@ -278,40 +284,45 @@ void FBoidSystem::ShowDebugGrid()
 		FMath::FloorToInt(BoidBounds.Max.Z / GridCellSize)
 	);
 	
-	// 해당 그리드의 해쉬 값에 할당된 Boid 최대 갯수를 알아낸다.
-	int32 MaxBoidNumInHash = -1;
-	for (int32 i = 0; i < CellBoidCount.Num(); ++i)
+	int32 ThresholdPct = BeliConsole::CVarBoidGridDensityThreshold.GetValueOnGameThread();
+	const int32 AbsoluteDensityThreshold = FMath::Floor(MaxBoidCount * (StaticCast<float>(ThresholdPct) * 0.01f));
+	
+	// 화면 좌측 상단에 텍스트 출력
+	if (GEngine)
 	{
-		if (MaxBoidNumInHash < CellBoidCount[i])
-		{
-			MaxBoidNumInHash = CellBoidCount[i];
-		}
+		GEngine->AddOnScreenDebugMessage(1001, 0.0f, FColor::Cyan, FString::Printf(TEXT("Boid Grid Debug : ON (Threshold: %d%%, Threshold Count: %d)"), ThresholdPct, AbsoluteDensityThreshold));
 	}
 	
-	const float AverageBoidNumInHash = MaxBoidCount / StaticCast<float>(CellBoidCount.Num());
-	
+	int32 DrawCount = 0;
 	for (int32 X = MinGrid.X; X <= MaxGrid.X; X++)
 	{
 		for (int32 Y = MinGrid.Y; Y <= MaxGrid.Y; Y++)
 		{
 			for (int32 Z = MinGrid.Z; Z <= MaxGrid.Z; Z++)
 			{
+				++DrawCount;
+				
 				// 해시 테이블에서 해당 인덱스의 밀집도 검사 후 DrawDebugSolidBox 호출
 				const FSpatialGrid GridIndex = FSpatialGrid(X, Y, Z);
 				const int32 GridHashKey = GridHashHelper->GetHashKey(GridIndex);
 				check(CellBoidCount.IsValidIndex(GridHashKey));
 				const int32 NumBoidsInHash = CellBoidCount[GridHashKey];
 				
-				// 밀집한 Grid는 더 진하게 보이게 하여 밀집도를 한눈에 볼 수 있게.
-				const float DensityAlpha = FMath::IsNearlyEqual(MaxBoidNumInHash, AverageBoidNumInHash) ? 0.f : (NumBoidsInHash - AverageBoidNumInHash) / StaticCast<float>(MaxBoidCount - AverageBoidNumInHash);
-				FColor HeatColor = FColor::Red;
-				HeatColor.A = FMath::Clamp(DensityAlpha, 0.f, 0.8f);
+				const FVector CellCenter = FVector(GridIndex) * GridCellSize + FVector(GridCellSize * 0.5f);
+				DrawDebugBox(World, CellCenter, FVector(GridCellSize * 0.5f), FColor::Black, false, -1.0f, 0, 2.0f); // 외곽선
 				
-				FVector CellCenter = FVector(GridIndex) * GridCellSize; 
-				
-				DrawDebugSolidBox(World, CellCenter, FVector(GridCellSize), HeatColor, false, -1.0f, 0);
-				DrawDebugBox(World, CellCenter, FVector(GridCellSize), FColor::Black, false, -1.0f, 0, 2.0f); // 외곽선
+				if (NumBoidsInHash > AbsoluteDensityThreshold)
+				{
+					// 해시 키를 이용하여 황금값을 위한 Hue 값 게산
+					const float Hue = FMath::Fmod(GridHashKey * 137.508f, 360.0f);
+					FLinearColor HashLinearColor(Hue, 0.9f, 0.9f, 1.0f);
+					FColor HeatColor = HashLinearColor.HSVToLinearRGB().ToFColor(true).WithAlpha(125);
+					
+					DrawDebugSolidBox(World, CellCenter, FVector(GridCellSize * 0.5f), HeatColor, false, -1.0f, 0);
+				}
 			}
 		}
 	}
+	
+	UE_LOG(LogBeli, Verbose, TEXT("Grid DebugDraw Count - %d"), DrawCount);
 }
