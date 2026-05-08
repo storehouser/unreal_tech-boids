@@ -3,6 +3,8 @@
 
 #include "Beli.h"
 #include "BoidRules.h"
+#include "HLSLTypeAliases.h"
+
 #include "Library/SpatialGridHashHelper.h"
 
 
@@ -286,6 +288,8 @@ void FBoidSystem::ShowDebugGrid()
 		}
 	}
 	
+	const float AverageBoidNumInHash = MaxBoidCount / StaticCast<float>(CellBoidCount.Num());
+	
 	for (int32 X = MinGrid.X; X <= MaxGrid.X; X++)
 	{
 		for (int32 Y = MinGrid.Y; Y <= MaxGrid.Y; Y++)
@@ -298,13 +302,14 @@ void FBoidSystem::ShowDebugGrid()
 				check(CellBoidCount.IsValidIndex(GridHashKey));
 				const int32 NumBoidsInHash = CellBoidCount[GridHashKey];
 				
-				// FIXME @Auggie 튜닝이 필요.
-				FLinearColor HeatColor = FLinearColor::Red;
-				HeatColor.A = FMath::Lerp(0.0f, 0.8f, (NumBoidsInHash / (float)MaxBoidNumInHash));
+				// 밀집한 Grid는 더 진하게 보이게 하여 밀집도를 한눈에 볼 수 있게.
+				const float DensityAlpha = FMath::IsNearlyEqual(MaxBoidNumInHash, AverageBoidNumInHash) ? 0.f : (NumBoidsInHash - AverageBoidNumInHash) / StaticCast<float>(MaxBoidCount - AverageBoidNumInHash);
+				FColor HeatColor = FColor::Red;
+				HeatColor.A = FMath::Clamp(DensityAlpha, 0.f, 0.8f);
 				
 				FVector CellCenter = FVector(GridIndex) * GridCellSize; 
 				
-				DrawDebugSolidBox(World, CellCenter, FVector(GridCellSize), HeatColor.ToFColor(true), false, -1.0f, 0);
+				DrawDebugSolidBox(World, CellCenter, FVector(GridCellSize), HeatColor, false, -1.0f, 0);
 				DrawDebugBox(World, CellCenter, FVector(GridCellSize), FColor::Black, false, -1.0f, 0, 2.0f); // 외곽선
 			}
 		}
