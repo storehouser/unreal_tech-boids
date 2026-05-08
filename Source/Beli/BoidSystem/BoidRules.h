@@ -20,7 +20,6 @@ public:
 	virtual void Initialize() { }
 	
 	/** 각 룰에서 구한 값을 토대로 Weight 값을 곱해서 최종 값 */
-	//virtual FVector CalculateForce(const FBoidData& Boid, const TArrayView<const FBoidData*> Neighbors, const FBoidSceneContext& BoidSceneContext) const;
 	virtual FVector3f CalculateForce(const FBoidBuffer& BoidBuffer, int32 MyIndex, TArrayView<int32> NeighborIndices, const FBoidSceneContext& BoidSceneContext) const;
 	
 protected:

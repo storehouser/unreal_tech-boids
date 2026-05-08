@@ -216,7 +216,6 @@ void FBoidSystem::SwapBuffers()
 	//Swap(BoidReadBuffer, BoidWriteBuffer);
 	
 	// 효과적인 탐색 기법을 위해 해쉬 각 보이드 들의 위치 값을 기반으로 해쉬 값 처리 및 연걸 처리
-	// TODO @Auggie CellStartIndex 및 CellBoidCount 를 GridHashHelper에서 관리하게 하고 Helper라는 이름도 바꾸자 
 	{
 		SCOPE_CYCLE_COUNTER(STAT_BoidsSpatialHash);
 		
