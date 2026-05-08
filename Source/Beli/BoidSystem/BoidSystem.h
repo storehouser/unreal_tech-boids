@@ -5,6 +5,9 @@
 #include "BoidSystem.generated.h"
 
 
+#define USE_CACHE_OPTIMIZED_LOGIC 1
+
+
 /**
  * 
  */
@@ -55,9 +58,12 @@ private:
 	
 	/** Hash값을 기반으로 해당 Hash를 가지고 있는 최초의 Boid Index 위치 정보 저장 - HashTable 크기 (일반적으로 Boids의 전체 크기 * 2) */
 	TArray<int32> CellStartIndex;
-	
+
 	/** 해당 Hash에 같은 Boid 갯수 저장 */
 	TArray<int32> CellBoidCount;
+
+	/** */
+	TArray<int32> BoidNextIndex;
 	
 	/** 최대 이웃 갯수, Stack 메모리를 사용하는 배열을 위해 Compile 타임에 지정 필요 */
 	constexpr static int32 MaxNeighborsNum = 16;

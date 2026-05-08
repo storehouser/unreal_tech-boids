@@ -133,9 +133,10 @@ void FBoidSystem::UpdateBoids_Concurrent(float DeltaTime, const FTransform& Simu
 				const FSpatialGrid NeighborGrid = MyGrid + BoidSystem::GridSearchOffsets[GridSearchIndex];
 				
 				const int32 TargetHash = GridHashHelper->GetHashKey(NeighborGrid);
+#if USE_CACHE_OPTIMIZED_LOGIC
 				const int32 StartIndex = CellStartIndex[TargetHash];
 				const int32 BoidCount = CellBoidCount[TargetHash]; 
-
+				
 				// 해당 그리드에 보이드가 1마리라도 들어있다면 탐색 시작!
 				if (StartIndex != -1 && BoidCount > 0)
 				{
@@ -160,6 +161,26 @@ void FBoidSystem::UpdateBoids_Concurrent(float DeltaTime, const FTransform& Simu
 						}
 					}
 				}
+#else
+				for (int32 TargetIndex = CellStartIndex[TargetHash]; TargetIndex != -1; TargetIndex = BoidNextIndex[TargetIndex])
+				{
+					if (TargetIndex != i)
+					{
+						const float DistSquared = FVector3f::DistSquared(BoidLocation, BoidReadBuffer.GetLocation(TargetIndex));
+				            
+							if (DistSquared < SearchRadiusSquared)
+							{
+								NeighborIndices.Add(TargetIndex);
+				            
+								// 추가적인 데이터 검색이 필요없을 때 중첩된 Loop문을 전부 종료 (최적화)
+								if (NeighborIndices.Num() == MaxNeighborsNum)
+								{
+									goto EndSearch;
+								}
+							}
+					}
+				}
+#endif
 			}
 		
 			EndSearch:
@@ -213,6 +234,7 @@ const TArray<FTransform>& FBoidSystem::GetBoidTransforms() const
 
 void FBoidSystem::SwapBuffers()
 {
+#if USE_CACHE_OPTIMIZED_LOGIC
 	// 
 	{
 		SCOPE_CYCLE_COUNTER(STAT_BoidsBufferSort);
@@ -238,7 +260,7 @@ void FBoidSystem::SwapBuffers()
 		});
 	}
 	
-	// 효과적인 탐색 기법을 위해 해쉬 각 보이드 들의 위치 값을 기반으로 해쉬 값 처리 및 연걸 처리
+	// 해쉬 기반으로 모든 보이드들을 추적할 수 있게 값을 저장. 해쉬를 기준으로 정렬이 됐으므로 최초의 StartIndex에 기록, 갯수를 기입한다.  
 	{
 		SCOPE_CYCLE_COUNTER(STAT_BoidsSpatialHash);
 		
@@ -259,6 +281,26 @@ void FBoidSystem::SwapBuffers()
 			CellBoidCount[HashKey]++;
 		}
 	}
+#else
+	
+	Swap(BoidReadBuffer, BoidWriteBuffer);
+	
+	CellStartIndex.Init(-1, GridHashHelper->GetHashSize());
+	BoidNextIndex.Init(-1, MaxBoidCount);
+
+	{
+		SCOPE_CYCLE_COUNTER(STAT_BoidsSpatialHash);
+
+		for (int32 i = 0; i < MaxBoidCount; ++i)
+		{
+			const int32 HashKey = GridHashHelper->GetHashKeyFromLocation(BoidReadBuffer.GetLocation(i));
+
+			// 고정된 배열의 크기에서 같은 Hash를 가지는 Boid Index 값을 저장 - 배열 기반의 LinkedList
+			BoidNextIndex[i] = CellStartIndex[HashKey];
+			CellStartIndex[HashKey] = i;
+		}
+	}
+#endif
 }
 
 void FBoidSystem::ShowDebugGrid()
