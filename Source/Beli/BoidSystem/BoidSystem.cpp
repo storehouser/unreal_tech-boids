@@ -197,9 +197,11 @@ void FBoidSystem::UpdateBoids_Concurrent(float DeltaTime, const FTransform& Simu
 		ShowDebugGrid();	
 	}
 	
+	// 보다 원활한 테스팅을 위해 화면 좌상단에 항상 현재 Boid의 최대 갯수를 띄워준다. (여러 개 있을 땐... 
 	if (GEngine)
 	{
-		GEngine->AddOnScreenDebugMessage(1000, 0.0f, FColor::Green, FString::Printf(TEXT("Boid System (MaxBoidCount: %d)"), MaxBoidCount));
+		GEngine->AddOnScreenDebugMessage(StaticCast<int32>(GetTypeHash(this)), 0.0f, FColor::Green, 
+			FString::Printf(TEXT("Boid System (MaxBoidCount: %d)"), MaxBoidCount));
 	}
 #endif
 }
@@ -235,9 +237,6 @@ void FBoidSystem::SwapBuffers()
 			BoidReadBuffer.CopyBoidDataFrom(i, BoidWriteBuffer, OriginIndex);
 		});
 	}
-	
-	// 매번 Hash 기반으로 할 필요는 없다. Hash기반 재배열에 대한 성능 측정 후 주기적(10프레임 정도?) 으로 수행하고 그 외엔 Swap을 할수 있도록 해보자.
-	//Swap(BoidReadBuffer, BoidWriteBuffer);
 	
 	// 효과적인 탐색 기법을 위해 해쉬 각 보이드 들의 위치 값을 기반으로 해쉬 값 처리 및 연걸 처리
 	{
@@ -290,7 +289,8 @@ void FBoidSystem::ShowDebugGrid()
 	// 화면 좌측 상단에 텍스트 출력
 	if (GEngine)
 	{
-		GEngine->AddOnScreenDebugMessage(1001, 0.0f, FColor::Cyan, FString::Printf(TEXT("Boid Grid Debug : ON (Threshold: %d%%, Threshold Count: %d)"), ThresholdPct, AbsoluteDensityThreshold));
+		GEngine->AddOnScreenDebugMessage(StaticCast<int32>(GetTypeHash(this)) + 1, 0.0f, FColor::Cyan, 
+			FString::Printf(TEXT("Boid Grid Debug : ON (Threshold - Percent: %d%%, Count: %d)"), ThresholdPct, AbsoluteDensityThreshold));
 	}
 	
 	int32 DrawCount = 0;
