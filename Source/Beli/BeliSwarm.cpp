@@ -22,7 +22,7 @@ void ABeliSwarm::BeginPlay()
 	
 	check(IsValid(InstancedMeshComp));
 	
-	BoidSystem.Initialize(InstancedMeshComp->GetComponentTransform());
+	BoidSystem.Initialize(GetWorld(), InstancedMeshComp->GetComponentTransform());
 	
 	const TArray<FTransform>& BoidTransforms = BoidSystem.GetBoidTransforms();
 	InstancedMeshComp->AddInstances(BoidTransforms, false, false);

@@ -15,7 +15,7 @@ struct FBoidSystem
 	
 public:
 	/** */
-	void Initialize(const FTransform& SimulationSpace);
+	void Initialize(class UWorld* InWorld, const FTransform& SimulationSpace);
 	
 	/** */
 	void UpdateBoids_Concurrent(float DeltaTime, const FTransform& SimulationSpace);
@@ -25,6 +25,9 @@ public:
 	
 	/** */
 	void SwapBuffers();
+	
+	/** */
+	void ShowDebugGrid();
 	
 public:
 	/** 최대 Boid 객체의 수 */
@@ -60,7 +63,7 @@ private:
 	constexpr static int32 MaxNeighborsNum = 16;
 	
 	// FIXME - Grid를 촘촘하게 나눠서 검색할 수 있게 하거나 실제 Rule에서 가장 큰 값을 가져와서 취합해야 함
-	float SearchRadius = 500.f;
+	float GridCellSize = 500.f;
 	
 	struct FBoidHashPair
 	{
@@ -69,4 +72,7 @@ private:
 	};
 	
 	TArray<FBoidHashPair> HashPairs;
+	
+	UPROPERTY()
+	TObjectPtr<class UWorld> World;
 };

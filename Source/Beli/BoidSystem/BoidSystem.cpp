@@ -8,11 +8,17 @@
 
 namespace BeliConsole
 {
-	static TAutoConsoleVariable CVarDebugBoids(
-	TEXT("Boids.DebugMode"),
+	static TAutoConsoleVariable CVarShowSweepTest(
+	TEXT("Boids.ShowSweepTest"),
 	0, // 기본값: 0 (디버그 끄기, 멀티스레드 켜기), 
 	TEXT("Draw debug lines for Boids. 0=Off(MultiThread), N > 0 = On(ForceSingleThread)(DebugParam)"),
-	ECVF_Cheat);	
+	ECVF_Cheat);
+	
+	static TAutoConsoleVariable CVarShowBoidGrid(
+	TEXT("Boid.ShowGrid"),                // 콘솔 창에 입력할 명령어 이름
+	0,
+	TEXT("Toggle Spatial Hash Grid Debug Drawing. 0: Off, 1: On"), // 명령어 설명 (콘솔 창에서 ? 칠 때 나옴)
+	ECVF_Cheat);
 }
 
 
@@ -46,8 +52,10 @@ namespace BoidSystem
 	};
 }
 
-void FBoidSystem::Initialize(const FTransform& SimulationSpace)
+void FBoidSystem::Initialize(UWorld* InWorld, const FTransform& SimulationSpace)
 {
+	World = InWorld;
+	
 	// Boids 초기화 - 임의의 값들을 정해준다. 해당 임의 값을 토대로 BoidTransforms을 채운다.
 	// BoidWriteBuffer에는 Double-Buffer 패턴을 사용하기 위해 BoidReadBuffer와 똑같은 크기의 Boids 객체들을 할당하여 준비한다.
 	BoidWriteBuffer.Reserve(MaxBoidCount);
@@ -67,7 +75,7 @@ void FBoidSystem::Initialize(const FTransform& SimulationSpace)
 		BoidTransforms.Emplace(BoidWriteBuffer.GetTransform(i));
 	}
 	
-	GridHashHelper = MakeShared<FSpatialGridHashHelper>(SearchRadius, MaxBoidCount);
+	GridHashHelper = MakeShared<FSpatialGridHashHelper>(GridCellSize, MaxBoidCount);
 	
 	// 랜덤하게 적재된 WriteBuffer의 값을 ReadBuffer로 옮긴다.
 	BoidReadBuffer.SetNumUninitialized(MaxBoidCount);
@@ -89,8 +97,8 @@ void FBoidSystem::UpdateBoids_Concurrent(float DeltaTime, const FTransform& Simu
 	
 	// Debug 모드일때는 MultiThread를 사용하지 않고 강제로 Single Thread를 사용하여 내부에서 DrawDebug 등을 문제없이 사용할 수 있게 처리.
 #if !UE_BUILD_SHIPPING
-	const bool bIsDebugMode = BeliConsole::CVarDebugBoids.GetValueOnGameThread() != 0;
-	if (bIsDebugMode)
+	const bool bIsDebugSweepTest = BeliConsole::CVarShowSweepTest.GetValueOnGameThread() != 0;
+	if (bIsDebugSweepTest)
 	{
 		ParallelFlag = EParallelForFlags::ForceSingleThread;
 	}
@@ -101,10 +109,10 @@ void FBoidSystem::UpdateBoids_Concurrent(float DeltaTime, const FTransform& Simu
 	Context.BoidMaxSpeed = MaxSpeed;
 	Context.SimulationSpace = FTransform3f(SimulationSpace);
 #if !UE_BUILD_SHIPPING
-	Context.DebugParam = BeliConsole::CVarDebugBoids.GetValueOnGameThread();
+	Context.DebugParam = BeliConsole::CVarShowSweepTest.GetValueOnGameThread();
 #endif
 	
-	const float SearchRadiusSquared = SearchRadius * SearchRadius;
+	const float SearchRadiusSquared = GridCellSize * GridCellSize;
 	
 	{
 		SCOPE_CYCLE_COUNTER(STAT_BoidsRuleCalc);
@@ -178,6 +186,14 @@ void FBoidSystem::UpdateBoids_Concurrent(float DeltaTime, const FTransform& Simu
 	}
 	
 	SwapBuffers();
+	
+#if !UE_BUILD_SHIPPING
+	const bool bIsShowingBoid = BeliConsole::CVarShowBoidGrid.GetValueOnGameThread() != 0;
+	if (bIsShowingBoid)
+	{
+		ShowDebugGrid();	
+	}
+#endif
 }
 
 const TArray<FTransform>& FBoidSystem::GetBoidTransforms() const
@@ -234,6 +250,63 @@ void FBoidSystem::SwapBuffers()
         
 			// 해당 해시 셀의 보이드 카운트 1 증가
 			CellBoidCount[HashKey]++;
+		}
+	}
+}
+
+void FBoidSystem::ShowDebugGrid()
+{
+	check(IsValid(World));
+	
+	FBox BoidBounds;
+	for (int32 i = 0; i < MaxBoidCount; ++i)
+	{
+		BoidBounds += FVector(BoidReadBuffer.GetLocation(i));
+	}
+	
+	FSpatialGrid MinGrid = FSpatialGrid(
+		FMath::FloorToInt(BoidBounds.Min.X / GridCellSize),
+		FMath::FloorToInt(BoidBounds.Min.Y / GridCellSize),
+		FMath::FloorToInt(BoidBounds.Min.Z / GridCellSize)
+	);
+
+	FSpatialGrid MaxGrid = FSpatialGrid(
+		FMath::FloorToInt(BoidBounds.Max.X / GridCellSize),
+		FMath::FloorToInt(BoidBounds.Max.Y / GridCellSize),
+		FMath::FloorToInt(BoidBounds.Max.Z / GridCellSize)
+	);
+	
+	// 해당 그리드의 해쉬 값에 할당된 Boid 최대 갯수를 알아낸다.
+	int32 MaxBoidNumInHash = -1;
+	for (int32 i = 0; i < CellBoidCount.Num(); ++i)
+	{
+		if (MaxBoidNumInHash < CellBoidCount[i])
+		{
+			MaxBoidNumInHash = CellBoidCount[i];
+		}
+	}
+	
+	for (int32 X = MinGrid.X; X <= MaxGrid.X; X++)
+	{
+		for (int32 Y = MinGrid.Y; Y <= MaxGrid.Y; Y++)
+		{
+			for (int32 Z = MinGrid.Z; Z <= MaxGrid.Z; Z++)
+			{
+				// 해시 테이블에서 해당 인덱스의 밀집도 검사 후 DrawDebugSolidBox 호출
+				const FSpatialGrid GridIndex = FSpatialGrid(X, Y, Z);
+				const int32 GridHashKey = GridHashHelper->GetHashKey(GridIndex);
+				check(CellBoidCount.IsValidIndex(GridHashKey));
+				const int32 NumBoidsInHash = CellBoidCount[GridHashKey];
+				
+				// FIXME @Auggie 튜닝이 필요.
+				FLinearColor HeatColor = FLinearColor::Red;
+				HeatColor.A = FMath::Lerp(0.0f, 0.8f, (NumBoidsInHash / (float)MaxBoidNumInHash));
+				
+				FVector CellCenter = FVector(GridIndex) * GridCellSize; 
+				
+				DrawDebugSolidBox(World, CellCenter, FVector(GridCellSize), HeatColor.ToFColor(true), false, -1.0f, 0);
+				DrawDebugBox(World, CellCenter, FVector(GridCellSize), FColor::Black, false, -1.0f, 0, 2.0f); // 외곽선
+			}
 		}
 	}
 }
