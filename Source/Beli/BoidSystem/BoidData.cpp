@@ -20,7 +20,7 @@ void FBoidBuffer::Reserve(int32 MaxBoidCount)
 	Velocities.Reserve(MaxBoidCount);
 }
 
-void FBoidBuffer::Add(int32 InID, FVector3f InLocation, FRotator3f InRotation, FVector3f InVelocity)
+void FBoidBuffer::Add(int32 InID, const FVector3f& InLocation, const FRotator3f& InRotation, const FVector3f& InVelocity)
 {
 	BoidIDs.Add(InID);
 	Locations.Add(InLocation);
@@ -30,7 +30,7 @@ void FBoidBuffer::Add(int32 InID, FVector3f InLocation, FRotator3f InRotation, F
 	++NumBufferSize;
 }
 
-void FBoidBuffer::SetBoidData(int32 InIndex, FVector3f InLocation, FRotator3f InRotation, FVector3f InVelocity)
+void FBoidBuffer::SetBoidData(int32 InIndex, const FVector3f& InLocation, const FRotator3f& InRotation, const FVector3f& InVelocity)
 {
 	check(InIndex < NumBufferSize);
 	

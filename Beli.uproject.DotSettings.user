@@ -8,4 +8,5 @@
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=A83DA162_002DC8AE_002D83D6_002DF7EE_002D4C553226F12E_002Fd_003Aunsupported_002Fd_003Atest_002Ff_003Acxx11_005Ftensor_005Fmap_002Ecpp/@EntryIndexedValue">ForceIncluded</s:String>
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=D89A1BC9_002DCCA8_002DC192_002D54A2_002DD1612341B951_002Fd_003A1_002E30_002E2_002Fd_003Aasio_002Fd_003Adetail_002Ff_003Areactive_005Fdescriptor_005Fservice_002Ehpp/@EntryIndexedValue">ForceIncluded</s:String>
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=D89A1BC9_002DCCA8_002DC192_002D54A2_002DD1612341B951_002Fd_003A1_002E30_002E2_002Fd_003Aasio_002Ff_003Aread_002Ehpp/@EntryIndexedValue">ForceIncluded</s:String>
+	<s:Boolean x:Key="/Default/UserDictionary/Words/=Auggie/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=Boid/@EntryIndexedValue">True</s:Boolean></wpf:ResourceDictionary>

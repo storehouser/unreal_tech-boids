@@ -6,20 +6,22 @@
 #include "Library/BoidsFunctionLibrary.h"
 
 
-FVector3f UBoidRuleBase::CalculateForce(const FBoidBuffer& BoidBuffer, int32 MyIndex, TArrayView<int32> NeighborIndices, const FBoidSceneContext& BoidSceneContext) const
+bool UBoidRuleBase::EvaluateBoid(OUT FBoidRuleResult& OutResult, const FBoidBuffer& BoidBuffer, int32 MyIndex, TArrayView<int32> NeighborIndices, const FBoidSceneContext& BoidSceneContext) const
 {
-	return CalculateForce_Internal(BoidBuffer, MyIndex, NeighborIndices, BoidSceneContext) * Weight;
+	EvaluateBoid_Internal(OutResult, BoidBuffer, MyIndex, NeighborIndices, BoidSceneContext);
+	OutResult.Force *= ForceWeight;
+	
+	return true;
 }
 
 
 UBoidRule_Cohesion::UBoidRule_Cohesion()
 {
-	Weight = 0.1f;
+	ForceWeight = 0.1f;
 }
 
-FVector3f UBoidRule_Cohesion::CalculateForce_Internal(const FBoidBuffer& BoidBuffer, int32 MyIndex, TArrayView<int32> NeighborIndices, const FBoidSceneContext& BoidSceneContext) const
+bool UBoidRule_Cohesion::EvaluateBoid_Internal(OUT FBoidRuleResult& OutResult, const FBoidBuffer& BoidBuffer, int32 MyIndex, TArrayView<int32> NeighborIndices, const FBoidSceneContext& BoidSceneContext) const
 {
-	FVector3f CohesionForce = FVector3f::ZeroVector;
 	FVector3f CenterOfMass = FVector3f::ZeroVector; // 이웃들의 위치를 다 더할 변수
 	int32 NumNeighborhood = 0;
 	const float CohesionDistSquared = FMath::Square(CohesionRadius);
@@ -37,7 +39,8 @@ FVector3f UBoidRule_Cohesion::CalculateForce_Internal(const FBoidBuffer& BoidBuf
 		}
 	}
 	
-	if (NumNeighborhood > 0)
+	const bool bHasNeighborhood = NumNeighborhood > 0;
+	if (bHasNeighborhood)
 	{
 		CenterOfMass /= NumNeighborhood;
 		const FVector3f DesiredDirection = CenterOfMass - BoidBuffer.GetLocation(MyIndex);
@@ -50,20 +53,20 @@ FVector3f UBoidRule_Cohesion::CalculateForce_Internal(const FBoidBuffer& BoidBuf
 			
 			// 조향력(Steering) 도출: 목표 속도 - 현재 속도
 			const FVector3f DesiredVelocity = DesiredDirection.GetUnsafeNormal() * BoidSceneContext.BoidMaxSpeed * SlowingScale;
-			CohesionForce = DesiredVelocity - BoidBuffer.GetVelocity(MyIndex);
+			OutResult.Force = DesiredVelocity - BoidBuffer.GetVelocity(MyIndex);
 		}
 	}
 
-	return CohesionForce;
+	return bHasNeighborhood;
 }
 
 
 UBoidRule_Separation::UBoidRule_Separation()
 {
-	Weight = 800.f;
+	ForceWeight = 800.f;
 }
 
-FVector3f UBoidRule_Separation::CalculateForce_Internal(const FBoidBuffer& BoidBuffer, int32 MyIndex, TArrayView<int32> NeighborIndices, const FBoidSceneContext& BoidSceneContext) const
+bool UBoidRule_Separation::EvaluateBoid_Internal(OUT FBoidRuleResult& OutResult, const FBoidBuffer& BoidBuffer, int32 MyIndex, TArrayView<int32> NeighborIndices, const FBoidSceneContext& BoidSceneContext) const
 {
 	FVector3f SeparationForce = FVector3f::ZeroVector;
 	int32 NumNeighborhood = 0;
@@ -91,23 +94,23 @@ FVector3f UBoidRule_Separation::CalculateForce_Internal(const FBoidBuffer& BoidB
 	}
 	
 	// 이웃 갯수만큼 평균 값을 계산
+	const bool bHasNeighborhood = NumNeighborhood > 0; 
 	if (NumNeighborhood > 0)
 	{
-		SeparationForce /= NumNeighborhood;
+		OutResult.Force = SeparationForce /= NumNeighborhood;
 	}
 	
-	return SeparationForce;
+	return bHasNeighborhood;
 }
 
 
 UBoidRule_Alignment::UBoidRule_Alignment()
 {
-	Weight = 0.2f;
+	ForceWeight = 0.2f;
 }
 
-FVector3f UBoidRule_Alignment::CalculateForce_Internal(const FBoidBuffer& BoidBuffer, int32 MyIndex, TArrayView<int32> NeighborIndices, const FBoidSceneContext& BoidSceneContext) const
+bool UBoidRule_Alignment::EvaluateBoid_Internal(OUT FBoidRuleResult& OutResult, const FBoidBuffer& BoidBuffer, int32 MyIndex, TArrayView<int32> NeighborIndices, const FBoidSceneContext& BoidSceneContext) const
 {
-	FVector3f AlignmentForce = FVector3f::ZeroVector;
 	FVector3f AverageVelocity = FVector3f::ZeroVector; // 이웃들의 속도를 다 더할 변수
 	int32 NumNeighborhood = 0;
 	const float AlignmentDistSquared = FMath::Square(AlignmentRadius);
@@ -123,7 +126,8 @@ FVector3f UBoidRule_Alignment::CalculateForce_Internal(const FBoidBuffer& BoidBu
 		}
 	}
 	
-	if (NumNeighborhood > 0)
+	const bool bHasNeighborhood = NumNeighborhood > 0; 
+	if (bHasNeighborhood)
 	{
 		AverageVelocity /= NumNeighborhood;
     
@@ -131,38 +135,36 @@ FVector3f UBoidRule_Alignment::CalculateForce_Internal(const FBoidBuffer& BoidBu
 		{
 			// 조향력(Steering) 도출: 목표 속도 - 현재 속도
 			const FVector3f DesiredVelocity = AverageVelocity.GetSafeNormal() * BoidSceneContext.BoidMaxSpeed;
-			AlignmentForce = DesiredVelocity - BoidBuffer.GetVelocity(MyIndex);
+			OutResult.Force = DesiredVelocity - BoidBuffer.GetVelocity(MyIndex);
 		}
 	}
 
-	return AlignmentForce;
+	return bHasNeighborhood;
 }
 
 
 UBoidRule_TendingToPlace::UBoidRule_TendingToPlace()
 {
-	Weight = 0.2f;
+	ForceWeight = 0.2f;
 }
 
-FVector3f UBoidRule_TendingToPlace::CalculateForce_Internal(const FBoidBuffer& BoidBuffer, int32 MyIndex, TArrayView<int32> NeighborIndices, const FBoidSceneContext& BoidSceneContext) const
+bool UBoidRule_TendingToPlace::EvaluateBoid_Internal(OUT FBoidRuleResult& OutResult, const FBoidBuffer& BoidBuffer, int32 MyIndex, TArrayView<int32> NeighborIndices, const FBoidSceneContext& BoidSceneContext) const
 {
-	FVector3f PlaceForce = FVector3f::ZeroVector;
-	
 	const FVector3f Distance = BoidSceneContext.SimulationSpace.TransformPosition(PlaceLocation) - BoidBuffer.GetLocation(MyIndex);
 	if (!Distance.IsNearlyZero())
 	{
 		// 조향력(Steering) 도출: 목표 속도 - 현재 속도
 		const FVector3f DesiredVelocity = Distance.GetUnsafeNormal() * BoidSceneContext.BoidMaxSpeed;
-		PlaceForce = DesiredVelocity - BoidBuffer.GetVelocity(MyIndex);
+		OutResult.Force = DesiredVelocity - BoidBuffer.GetVelocity(MyIndex);
 	}
 	
-	return PlaceForce;
+	return true;
 }
 
 
 UBoidRule_AvoidanceObstacle::UBoidRule_AvoidanceObstacle()
 {
-	Weight = 3500.f;
+	ForceWeight = 3500.f;
 }
 
 void UBoidRule_AvoidanceObstacle::Initialize()
@@ -174,11 +176,10 @@ void UBoidRule_AvoidanceObstacle::Initialize()
 	SphereShape = FCollisionShape::MakeSphere(BoidRadius); // 크기(여유 공간)만큼의 구형
 }
 
-FVector3f UBoidRule_AvoidanceObstacle::CalculateForce_Internal(const FBoidBuffer& BoidBuffer, int32 MyIndex, TArrayView<int32> NeighborIndices, const FBoidSceneContext& BoidSceneContext) const
+bool UBoidRule_AvoidanceObstacle::EvaluateBoid_Internal(OUT FBoidRuleResult& OutResult, const FBoidBuffer& BoidBuffer, int32 MyIndex, TArrayView<int32> NeighborIndices, const FBoidSceneContext& BoidSceneContext) const
 {
 	const UWorld* World = GetWorld();
 	check(IsValid(World));
-	FVector3f AvoidanceForce = FVector3f::ZeroVector;
 	
 	// 0. 선두를 찾는다. !! TODO @Auggie 추가적인 최적화 필요
 #if 1
@@ -218,7 +219,7 @@ FVector3f UBoidRule_AvoidanceObstacle::CalculateForce_Internal(const FBoidBuffer
 	// 내가 리더가 아니면 충돌 검사를 하지 않고 즉시 종료
 	if (!bIsLeader)
 	{
-		return FVector3f::ZeroVector;
+		return false;
 	}
 #endif
 
@@ -252,7 +253,7 @@ FVector3f UBoidRule_AvoidanceObstacle::CalculateForce_Internal(const FBoidBuffer
 	// 2. 정면에 아무것도 없다면 굳이 피보나치 방향으로 추가적인 충돌 검사가 불필요.
 	if (!bHitForward) 
 	{
-		return AvoidanceForce; 
+		return false; 
 	}
 
 	// 3. 정면에 무언가 있다면, 비로소 피보나치 방향 배열을 순회하며 '구멍(빈 공간)'을 찾습니다.
@@ -294,13 +295,13 @@ FVector3f UBoidRule_AvoidanceObstacle::CalculateForce_Internal(const FBoidBuffer
 	if (bFoundEscape)
 	{
 		const FVector3f DesiredVelocity = EscapeDirection * BoidSceneContext.BoidMaxSpeed;
-		AvoidanceForce = (DesiredVelocity - BoidBuffer.GetVelocity(MyIndex));
+		OutResult.Force = (DesiredVelocity - BoidBuffer.GetVelocity(MyIndex));
 	}
 	else
 	{
 		// 모든 방향이 막혀있다면 (막다른 골목)? -> 브레이크를 밟거나 뒤로 돌기!
-		AvoidanceForce = -BoidBuffer.GetVelocity(MyIndex); 
+		OutResult.Force = -BoidBuffer.GetVelocity(MyIndex); 
 	}
 
-	return AvoidanceForce;
+	return true;
 }

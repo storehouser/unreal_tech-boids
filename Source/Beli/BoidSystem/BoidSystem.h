@@ -70,7 +70,7 @@ private:
 	/** 최대 이웃 갯수, Stack 메모리를 사용하는 배열을 위해 Compile 타임에 지정 필요 */
 	constexpr static int32 MaxNeighborsNum = 16;
 	
-	// FIXME - Grid를 촘촘하게 나눠서 검색할 수 있게 하거나 실제 Rule에서 가장 큰 값을 가져와서 취합해야 함
+	// TODO @Auggie Rule 중에 가장 큰 탐색 범위를 가져와서 검색할 수 있게 변경 필요
 	float GridCellSize = 500.f;
 	
 	struct FBoidHashPair

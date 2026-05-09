@@ -187,14 +187,21 @@ void FBoidSystem::UpdateBoids_Concurrent(float DeltaTime, const FTransform& Simu
 			EndSearch:
 		
 			// 인접한 Grid 영역에서 도출한 Neighbors(최대 갯수는 MaxNeighborsNum)에 대해서만 계산을 수행
-			FVector3f CalculatedForce = FVector3f::ZeroVector;
+			FVector3f AccumulatedForce = FVector3f::ZeroVector;
 			for (const UBoidRuleBase* ActiveRule : ActiveRules)
 			{
-				CalculatedForce += ActiveRule->CalculateForce(BoidReadBuffer, i,NeighborIndices, Context);
+				FBoidRuleResult OutResult;
+				if (ActiveRule->EvaluateBoid(OutResult, BoidReadBuffer, i,NeighborIndices, Context))
+				{
+					AccumulatedForce += OutResult.Force;
+				}
 			}
-			const FVector3f NewForce = CalculatedForce.GetClampedToMaxSize(MaxForce);
+			
+			const FVector3f NewForce = AccumulatedForce.GetClampedToMaxSize(MaxForce);
+			
+			
 		
-			// WriteBuffer에 값을 적용하고 Transform 획득, 반영
+			// Result - WriteBuffer에 값을 적용하고 Transform 획득, 반영
 			const FVector3f MyBoidVelocity = BoidReadBuffer.GetVelocity(i);
 			const FVector3f MyBoidLocation = BoidReadBuffer.GetLocation(i);
 			
