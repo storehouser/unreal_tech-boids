@@ -64,8 +64,6 @@ void FBoidSystem::Initialize(UWorld* InWorld, const FTransform& SimulationSpace)
 	SpatialContext.Initialize(MaxBoidCount, GridCellSize, DefaultBoidMeshScale);
 	for (int32 i = 0; i < MaxBoidCount; ++i)
 	{
-		int32 ID = i;	// TODO 이 아이디값 쓰게 꼭 바꾸자.
-		
 		// Swarm이 설치된 위치를 기준으로 랜덤값을 구하기 위해 Local Space 상의 위치 값을 구하고 그 값을 토대로 WorldSpace로 변환.
 		const FVector3f BoidNormal = FVector3f(FMath::VRand());
 		const FVector3f RelRandLocation = FVector3f(FMath::RandRange(-1000, 1000), FMath::RandRange(-1000, 1000), FMath::RandRange(-1000, 1000));
