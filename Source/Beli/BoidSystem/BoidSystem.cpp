@@ -55,6 +55,7 @@ namespace BoidSystem
 	};
 }
 
+
 void FBoidSystem::Initialize(UWorld* InWorld, const FTransform& SimulationSpace)
 {
 	World = InWorld;
@@ -185,7 +186,7 @@ void FBoidSystem::UpdateBoids_Concurrent(float DeltaTime, const FTransform& Simu
 		
 			EndSearch:
 		
-			// 인접한 Grid 영역에서 도출한 Neighbors에 대해서만 계산을 수행
+			// 인접한 Grid 영역에서 도출한 Neighbors(최대 갯수는 MaxNeighborsNum)에 대해서만 계산을 수행
 			FVector3f CalculatedForce = FVector3f::ZeroVector;
 			for (const UBoidRuleBase* ActiveRule : ActiveRules)
 			{
@@ -282,7 +283,6 @@ void FBoidSystem::SwapBuffers()
 		}
 	}
 #else
-	
 	Swap(BoidReadBuffer, BoidWriteBuffer);
 	
 	CellStartIndex.Init(-1, GridHashHelper->GetHashSize());

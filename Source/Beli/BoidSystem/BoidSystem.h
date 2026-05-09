@@ -59,11 +59,13 @@ private:
 	/** Hash값을 기반으로 해당 Hash를 가지고 있는 최초의 Boid Index 위치 정보 저장 - HashTable 크기 (일반적으로 Boids의 전체 크기 * 2) */
 	TArray<int32> CellStartIndex;
 
+#if USE_CACHE_OPTIMIZED_LOGIC
 	/** 해당 Hash에 같은 Boid 갯수 저장 */
 	TArray<int32> CellBoidCount;
-
-	/** */
+#else
+	/** 해쉬에 따른 Boid들이 정렬이 되어 있지 않을 경우 인덱스 기반 링크드 리스트 같은 해쉬를 가진 보이드들을 연결 */
 	TArray<int32> BoidNextIndex;
+#endif
 	
 	/** 최대 이웃 갯수, Stack 메모리를 사용하는 배열을 위해 Compile 타임에 지정 필요 */
 	constexpr static int32 MaxNeighborsNum = 16;
