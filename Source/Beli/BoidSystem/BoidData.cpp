@@ -21,7 +21,7 @@ void FBoidSpatialContext::Initialize(int32 InMaxBoidCount, float InGridCellSize,
 void FBoidSpatialContext::SwapBuffer()
 {
 #if USE_CACHE_OPTIMIZED_LOGIC
-	// 
+	// 최신화된 WriteBuffer에 있는 데이터들을 ReadBuffer로 옮긴다 (Swap). CPU 캐시 적중을 위해 Hash값 기준으로 정렬된 Index를 사용한다.  
 	{
 		HashPairs.SetNumUninitialized(MaxBoidCount);
 		
@@ -36,56 +36,52 @@ void FBoidSpatialContext::SwapBuffer()
 			return A.HashKey < B.HashKey;
 		});
 		
-		// 최신화된 WriteBuffer에 있는 데이터들을 ReadBuffer로 옮긴다 (Swap). CPU 캐시 적중을 위해 Hash값 기준으로 정렬된 Index를 사용한다.
 		ParallelFor(MaxBoidCount, [&](int32 i)
 		{
 			const int32 OriginIndex = HashPairs[i].Index;
 			ReadBuffer.CopyDataFrom(i, WriteBuffer, OriginIndex);
 		});
 	}
-	
-	// 해쉬 기반으로 모든 보이드들을 추적할 수 있게 값을 저장. 해쉬를 기준으로 정렬이 됐으므로 최초의 StartIndex에 기록, 갯수를 기입한다.  
+
+	// 모든 보이드들을 추적할 수 있게 값을 저장. 해쉬를 기준으로 정렬이 됐으므로 최초의 StartIndex에 기록, 갯수를 기입한다.
 	{
 		CellStartIndex.Init(-1, GridHashHelper.GetHashSize());
 		CellBoidCount.Init(0, GridHashHelper.GetHashSize());
-		
+
 		for (int32 i = 0; i < MaxBoidCount; ++i)
 		{
 			const int32 HashKey = GridHashHelper.GetHashKeyFromLocation(ReadBuffer.Locations[i]);
-			
+
 			// 해당 해시의 첫 번째 보이드라면 시작 인덱스로 기록
 			if (CellBoidCount[HashKey] == 0)
 			{
 				CellStartIndex[HashKey] = i;
 			}
-        
+
 			// 해당 해시 셀의 보이드 카운트 1 증가
 			CellBoidCount[HashKey]++;
-		}
+		}	
 	}
 #else
 	Swap(ReadBuffer, WriteBuffer);
 	
-	CellStartIndex.Init(-1, GridHashHelper->GetHashSize());
+	CellStartIndex.Init(-1, GridHashHelper.GetHashSize());
 	BoidNextIndex.Init(-1, MaxBoidCount);
 
+	for (int32 i = 0; i < MaxBoidCount; ++i)
 	{
-		SCOPE_CYCLE_COUNTER(STAT_BoidsSpatialHash);
+		const int32 HashKey = GridHashHelper.GetHashKeyFromLocation(ReadBuffer.Locations[i]);
 
-		for (int32 i = 0; i < MaxBoidCount; ++i)
-		{
-			const int32 HashKey = GridHashHelper->GetHashKeyFromLocation(ReadBuffer.GetLocation(i));
-
-			// 고정된 배열의 크기에서 같은 Hash를 가지는 Boid Index 값을 저장 - 배열 기반의 LinkedList
-			BoidNextIndex[i] = CellStartIndex[HashKey];
-			CellStartIndex[HashKey] = i;
-		}
+		// 고정된 배열의 크기에서 같은 Hash를 가지는 Boid Index 값을 저장 - 배열 기반의 LinkedList
+		BoidNextIndex[i] = CellStartIndex[HashKey];
+		CellStartIndex[HashKey] = i;
 	}
 #endif
 }
 
 void FBoidSpatialContext::ShowDebugGrid(const UWorld* World, int32 ThresholdPct)
 {
+#if USE_CACHE_OPTIMIZED_LOGIC
 	check(IsValid(World));
 	
 	FBox BoidBounds;
@@ -147,4 +143,5 @@ void FBoidSpatialContext::ShowDebugGrid(const UWorld* World, int32 ThresholdPct)
 	}
 	
 	UE_LOG(LogBeli, Verbose, TEXT("Grid DebugDraw Count - %d"), DrawCount);
+#endif
 }

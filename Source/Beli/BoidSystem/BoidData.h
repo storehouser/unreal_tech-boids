@@ -1,6 +1,7 @@
 #pragma once
 
 #define USE_CACHE_OPTIMIZED_LOGIC 1
+
 #include "Library/SpatialGridHashHelper.h"
 
 /**
@@ -62,6 +63,9 @@ public:
 		BoidTransforms[InIndex] = FTransform(FRotator(InRotation), FVector(InLocation), MeshScale);
 	}
 	
+	FORCEINLINE int32 GetStartBoidIndexByHashKey(const FSpatialGrid& InGridIndex) const { return CellStartIndex[GridHashHelper.GetHashKey(InGridIndex)]; }
+	
+#if USE_CACHE_OPTIMIZED_LOGIC
 	FORCEINLINE void GetBoidIndicesInGridHash(FSpatialGrid InGridIndex, OUT int32& StartIndex, OUT int32& Count)
 	{
 		const int32 TargetHash = GridHashHelper.GetHashKey(InGridIndex);
@@ -69,6 +73,9 @@ public:
 		StartIndex = CellStartIndex[TargetHash];
 		Count = CellBoidCount[TargetHash];
 	}
+#else
+	FORCEINLINE int32 GetNextBoidByBoidIndex(int32 InBoidIndex) const { return BoidNextIndex[InBoidIndex]; }
+#endif
 	
 	FORCEINLINE const TArray<FTransform>& GetTransforms() const { return BoidTransforms; }
 	

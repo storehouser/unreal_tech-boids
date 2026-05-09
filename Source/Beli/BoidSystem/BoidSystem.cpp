@@ -26,10 +26,8 @@ namespace BeliConsole
 
 
 DECLARE_CYCLE_STAT(TEXT("Total Boids Update"), STAT_BoidsTotalUpdate, STATGROUP_Boids);
-DECLARE_CYCLE_STAT(TEXT("Spatial Hashing"), STAT_BoidsSpatialHash, STATGROUP_Boids);
 DECLARE_CYCLE_STAT(TEXT("Parallel Rule Calc"), STAT_BoidsRuleCalc, STATGROUP_Boids);
-DECLARE_CYCLE_STAT(TEXT("Buffer Sort Based On Hash"), STAT_BoidsBufferSort, STATGROUP_Boids);
-DECLARE_CYCLE_STAT(TEXT("Data Shuffling"), STAT_BoidsDataShuffling, STATGROUP_Boids);
+DECLARE_CYCLE_STAT(TEXT("Swap Buffer"), STAT_BoidsSwapBuffers, STATGROUP_Boids);
 
 
 // 중심(Center) -> 면(Face) -> 모서리(Edge) -> 꼭짓점(Corner) 순서
@@ -131,9 +129,6 @@ void FBoidSystem::UpdateBoids_Concurrent(float DeltaTime, const FTransform& Simu
 			for (int32 GridSearchIndex = 0; GridSearchIndex < 27; ++GridSearchIndex)
 			{
 				const FSpatialGrid NeighborGrid = MyGrid + BoidSystem::GridSearchOffsets[GridSearchIndex];
-				
-				//const int32 TargetHash = GridHashHelper->GetHashKey(NeighborGrid);
-				
 #if USE_CACHE_OPTIMIZED_LOGIC
 				int32 StartIndex = 0;
 				int32 BoidCount = 0;
@@ -164,11 +159,11 @@ void FBoidSystem::UpdateBoids_Concurrent(float DeltaTime, const FTransform& Simu
 					}
 				}
 #else
-				for (int32 TargetIndex = CellStartIndex[TargetHash]; TargetIndex != -1; TargetIndex = BoidNextIndex[TargetIndex])
+				for (int32 TargetIndex = SpatialContext.GetStartBoidIndexByHashKey(NeighborGrid); TargetIndex != -1; TargetIndex = SpatialContext.GetNextBoidByBoidIndex(TargetIndex))
 				{
 					if (TargetIndex != i)
 					{
-						const float DistSquared = FVector3f::DistSquared(BoidLocation, BoidReadBuffer.GetLocation(TargetIndex));
+						const float DistSquared = FVector3f::DistSquared(BoidLocation, BoidReadBuffer.Locations[TargetIndex]);
 				            
 							if (DistSquared < SearchRadiusSquared)
 							{
@@ -235,7 +230,10 @@ void FBoidSystem::UpdateBoids_Concurrent(float DeltaTime, const FTransform& Simu
 		}, ParallelFlag);
 	}
 	
-	SpatialContext.SwapBuffer();
+	{
+		SCOPE_CYCLE_COUNTER(STAT_BoidsSwapBuffers);
+		SpatialContext.SwapBuffer();	
+	}
 	
 #if !UE_BUILD_SHIPPING
 	const int32 ThresholdPct = BeliConsole::CVarBoidGridDensityThreshold.GetValueOnGameThread();
