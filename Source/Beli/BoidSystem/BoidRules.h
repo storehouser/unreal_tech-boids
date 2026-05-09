@@ -8,6 +8,19 @@
 
 #include "BoidRules.generated.h"
 
+
+/**
+ * 각 규칙에서 계산한 Force를 누적하는 방식 순서에 따라 Rule을 정렬하기 때문에 순서 변경을 하지 않는다.
+ */
+UENUM(BlueprintType)
+enum class EBoidAccumulationMode : uint8
+{
+	General			UMETA(ToolTip = "Standard rule. This rule is ignored if any Exclusive rule has been triggered."),
+	Exclusive		UMETA(ToolTip = "Always applied. If this rule is triggered, all General rules are ignored."),
+	Absolute		UMETA(ToolTip = "Always applied. This rule is never ignored."),
+};
+
+
 /**
  * BoidRule 계산식, Class Property를 설정한 추상 클래스
  */
@@ -29,6 +42,9 @@ protected:
 public:
 	UPROPERTY(EditAnywhere, Category = "Boids")
 	float ForceWeight = 1.0f;
+	
+	UPROPERTY(VisibleAnywhere, Category = "Boids")
+	EBoidAccumulationMode AccumulationMode = EBoidAccumulationMode::General;
 };
 
 

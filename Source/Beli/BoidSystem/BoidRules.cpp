@@ -8,16 +8,20 @@
 
 bool UBoidRuleBase::EvaluateBoid(OUT FBoidRuleResult& OutResult, const FBoidBuffer& BoidBuffer, int32 MyIndex, TArrayView<int32> NeighborIndices, const FBoidSceneContext& BoidSceneContext) const
 {
-	EvaluateBoid_Internal(OutResult, BoidBuffer, MyIndex, NeighborIndices, BoidSceneContext);
-	OutResult.Force *= ForceWeight;
+	if (EvaluateBoid_Internal(OutResult, BoidBuffer, MyIndex, NeighborIndices, BoidSceneContext))
+	{
+		OutResult.Force *= ForceWeight;
+		return true;
+	}
 	
-	return true;
+	return false;
 }
 
 
 UBoidRule_Cohesion::UBoidRule_Cohesion()
 {
 	ForceWeight = 0.1f;
+	AccumulationMode = EBoidAccumulationMode::General;
 }
 
 bool UBoidRule_Cohesion::EvaluateBoid_Internal(OUT FBoidRuleResult& OutResult, const FBoidBuffer& BoidBuffer, int32 MyIndex, TArrayView<int32> NeighborIndices, const FBoidSceneContext& BoidSceneContext) const
@@ -64,6 +68,7 @@ bool UBoidRule_Cohesion::EvaluateBoid_Internal(OUT FBoidRuleResult& OutResult, c
 UBoidRule_Separation::UBoidRule_Separation()
 {
 	ForceWeight = 800.f;
+	AccumulationMode = EBoidAccumulationMode::Absolute;
 }
 
 bool UBoidRule_Separation::EvaluateBoid_Internal(OUT FBoidRuleResult& OutResult, const FBoidBuffer& BoidBuffer, int32 MyIndex, TArrayView<int32> NeighborIndices, const FBoidSceneContext& BoidSceneContext) const
@@ -107,6 +112,7 @@ bool UBoidRule_Separation::EvaluateBoid_Internal(OUT FBoidRuleResult& OutResult,
 UBoidRule_Alignment::UBoidRule_Alignment()
 {
 	ForceWeight = 0.2f;
+	AccumulationMode = EBoidAccumulationMode::General;
 }
 
 bool UBoidRule_Alignment::EvaluateBoid_Internal(OUT FBoidRuleResult& OutResult, const FBoidBuffer& BoidBuffer, int32 MyIndex, TArrayView<int32> NeighborIndices, const FBoidSceneContext& BoidSceneContext) const
@@ -146,6 +152,7 @@ bool UBoidRule_Alignment::EvaluateBoid_Internal(OUT FBoidRuleResult& OutResult, 
 UBoidRule_TendingToPlace::UBoidRule_TendingToPlace()
 {
 	ForceWeight = 0.2f;
+	AccumulationMode = EBoidAccumulationMode::General;
 }
 
 bool UBoidRule_TendingToPlace::EvaluateBoid_Internal(OUT FBoidRuleResult& OutResult, const FBoidBuffer& BoidBuffer, int32 MyIndex, TArrayView<int32> NeighborIndices, const FBoidSceneContext& BoidSceneContext) const
@@ -165,6 +172,7 @@ bool UBoidRule_TendingToPlace::EvaluateBoid_Internal(OUT FBoidRuleResult& OutRes
 UBoidRule_AvoidanceObstacle::UBoidRule_AvoidanceObstacle()
 {
 	ForceWeight = 3500.f;
+	AccumulationMode = EBoidAccumulationMode::Exclusive;
 }
 
 void UBoidRule_AvoidanceObstacle::Initialize()
@@ -200,7 +208,7 @@ bool UBoidRule_AvoidanceObstacle::EvaluateBoid_Internal(OUT FBoidRuleResult& Out
 		
 		// 내 속도의 방향과 이웃으로 향하는 방향이 거의 같으면 
 		const FVector3f ToNeighborDirection = ToNeighbor.GetSafeNormal();
-		if (FVector3f::DotProduct(MyBoidDirection, ToNeighborDirection) > 0.75f)
+		if (FVector3f::DotProduct(MyBoidDirection, ToNeighborDirection) > 0.9f)
         {
             const FVector3f& NeighborVel = BoidBuffer.GetVelocity(NeighborIndex);
             const FVector3f NeighborDir = NeighborVel.GetSafeNormal();
@@ -290,6 +298,8 @@ bool UBoidRule_AvoidanceObstacle::EvaluateBoid_Internal(OUT FBoidRuleResult& Out
 			break; 
 		}
 	}
+	
+	OutResult.ExclusiveTime = 2.f;
 
 	// 4. 안전한 방향으로 조향력 발생
 	if (bFoundEscape)

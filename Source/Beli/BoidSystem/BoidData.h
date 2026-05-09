@@ -12,17 +12,13 @@ public:
 	void Reserve(int32 MaxBoidCount);
 	
 	void Add(int32 InID, const FVector3f& InLocation, const FRotator3f& InRotation, const FVector3f& InVelocity);
-	void SetBoidData(int32 InIndex, const FVector3f& InLocation, const FRotator3f& InRotation, const FVector3f& InVelocity);
+	void SetBoidData(int32 InIndex, const FVector3f& InLocation, const FRotator3f& InRotation, const FVector3f& InVelocity, float InExclusiveTime);
 	
 	FORCEINLINE int32 GetID(int32 Index) const { check (Index < NumBufferSize); return BoidIDs[Index]; }
 	FORCEINLINE FVector3f GetLocation(int32 Index) const { check(Index < NumBufferSize); return Locations[Index]; }
 	FORCEINLINE FRotator3f GetRotation(int32 Index) const { check(Index < NumBufferSize); return Rotations[Index]; }
 	FORCEINLINE FVector3f GetVelocity(int32 Index) const { check(Index < NumBufferSize); return Velocities[Index]; }
-	
-	FORCEINLINE FTransform GetTransform(int32 Index) const
-	{
-		return FTransform(FRotator(Rotations[Index]), FVector(Locations[Index]), FVector::OneVector * 0.5f);	// TEMP Scale은 일단 0.5 임시로
-	}
+	FORCEINLINE float GetExclTime(int32 Index) const { check(Index < NumBufferSize); return ExclusiveTimes[Index]; }  
 	
 	FORCEINLINE void CopyBoidDataFrom(int32 DestIndex, const FBoidBuffer& SourceBuffer, int32 SourceIndex)
 	{
@@ -34,6 +30,7 @@ public:
 		Locations[DestIndex] = SourceBuffer.Locations[SourceIndex];
 		Rotations[DestIndex] = SourceBuffer.Rotations[SourceIndex];
 		Velocities[DestIndex] = SourceBuffer.Velocities[SourceIndex];
+		ExclusiveTimes[DestIndex] = SourceBuffer.ExclusiveTimes[SourceIndex];
 	}
 	
 private:
@@ -42,6 +39,7 @@ private:
 	TArray<FVector3f> Locations;
 	TArray<FRotator3f> Rotations;
 	TArray<FVector3f> Velocities;
+	TArray<float> ExclusiveTimes;
 	
 	int32 NumBufferSize = 0;
 };
@@ -62,10 +60,21 @@ struct FBoidSceneContext
 };
 
 
+/**
+ * 
+ */
 struct FBoidRuleResult
 {
 	FVector3f Force = FVector3f::ZeroVector;
-	float ExclusiveLevel = 0.f;
-	int32 AttractionID = 0;		// FIXME @Auggie State Enum을 새로 정의할까???
+	float ExclusiveTime = 0.f;
+	// int32 AttractionID = 0;		// FIXME @Auggie State Enum을 새로 정의할까???
+	
+	FORCEINLINE FBoidRuleResult& operator+=(const FBoidRuleResult& Other)
+	{
+		Force += Other.Force;
+		ExclusiveTime += Other.ExclusiveTime;
+    
+		return *this;
+	}
 };
 

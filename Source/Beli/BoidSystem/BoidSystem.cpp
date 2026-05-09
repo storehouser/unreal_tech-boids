@@ -76,7 +76,7 @@ void FBoidSystem::Initialize(UWorld* InWorld, const FTransform& SimulationSpace)
 		const FRotator3f NewRotation = FRotator3f(FRotationMatrix44f::MakeFromZ(BoidNormal).Rotator());
 		
 		BoidWriteBuffer.Add(ID, NewLocation, NewRotation, NewVelocity);
-		BoidTransforms.Emplace(BoidWriteBuffer.GetTransform(i));
+		BoidTransforms.Emplace(FRotator(NewRotation), FVector(NewLocation), FVector::OneVector * 0.5f);	// Scale은 임시로 0.5f
 	}
 	
 	GridHashHelper = MakeShared<FSpatialGridHashHelper>(GridCellSize, MaxBoidCount);
@@ -85,13 +85,18 @@ void FBoidSystem::Initialize(UWorld* InWorld, const FTransform& SimulationSpace)
 	BoidReadBuffer.SetNumUninitialized(MaxBoidCount);
 	SwapBuffers();
 	
-	// 규칙들 초기화
-	for (UBoidRuleBase* RuleBase : ActiveRules)
+	// 규칙들 초기화, 규칙의 Force 쌓는 방식에 따라 내림차순 정렬.
+	SortedRules = ActiveRules;
+	for (UBoidRuleBase* RuleBase : SortedRules)
 	{
 		RuleBase->Initialize();
 	}
+	SortedRules.Sort([](const UBoidRuleBase& A, const UBoidRuleBase& B)
+	{
+		return B.AccumulationMode < A.AccumulationMode;
+	});
 	
-	BoidTransforms.Init(FTransform::Identity, MaxBoidCount);
+	//BoidTransforms.Init(FTransform::Identity, MaxBoidCount);
 }
 
 void FBoidSystem::UpdateBoids_Concurrent(float DeltaTime, const FTransform& SimulationSpace)
@@ -187,19 +192,34 @@ void FBoidSystem::UpdateBoids_Concurrent(float DeltaTime, const FTransform& Simu
 			EndSearch:
 		
 			// 인접한 Grid 영역에서 도출한 Neighbors(최대 갯수는 MaxNeighborsNum)에 대해서만 계산을 수행
-			FVector3f AccumulatedForce = FVector3f::ZeroVector;
-			for (const UBoidRuleBase* ActiveRule : ActiveRules)
+			bool bShouldSkipGeneral = BoidReadBuffer.GetExclTime(i) > 0.f;
+			FBoidRuleResult AccumulatedResult;
+			for (const UBoidRuleBase* BoidRule : SortedRules)
 			{
-				FBoidRuleResult OutResult;
-				if (ActiveRule->EvaluateBoid(OutResult, BoidReadBuffer, i,NeighborIndices, Context))
+				// 가장 최근에 적용한 규칙이 Exc이면서 현재 규칙이 General 일때는 Loop를 종료.
+				if (BoidRule->AccumulationMode == EBoidAccumulationMode::General)
 				{
-					AccumulatedForce += OutResult.Force;
+					if (bShouldSkipGeneral)
+					{
+						break;
+					}
+				}
+				
+				FBoidRuleResult OutResult;
+				if (BoidRule->EvaluateBoid(OutResult, BoidReadBuffer, i,NeighborIndices, Context))
+				{
+					AccumulatedResult += OutResult;
+					
+					// Excl 규칙이 적용되면 General 규칙을 적용하지 못하도록 해당 플래그 값을 갱신
+					if (BoidRule->AccumulationMode == EBoidAccumulationMode::Exclusive)
+					{
+						bShouldSkipGeneral = true;
+					}
 				}
 			}
 			
-			const FVector3f NewForce = AccumulatedForce.GetClampedToMaxSize(MaxForce);
-			
-			
+			// 누적된 값으로 Force값을 구하고 이 값을 기반으로 속도, 위치, 
+			const FVector3f NewForce = AccumulatedResult.Force.GetClampedToMaxSize(MaxForce);
 		
 			// Result - WriteBuffer에 값을 적용하고 Transform 획득, 반영
 			const FVector3f MyBoidVelocity = BoidReadBuffer.GetVelocity(i);
@@ -210,10 +230,10 @@ void FBoidSystem::UpdateBoids_Concurrent(float DeltaTime, const FTransform& Simu
 			const FVector SmoothedVelocity = FMath::VInterpTo(FVector(MyBoidVelocity), FVector(NewVelocity), DeltaTime, 15.f);
 			const FRotator3f NewRotation = FRotator3f(FRotationMatrix::MakeFromZ(SmoothedVelocity).Rotator());
 			
-			BoidWriteBuffer.SetBoidData(i, NewLocation, NewRotation, NewVelocity);
+			const float NewExclusiveTime = FMath::Clamp(AccumulatedResult.ExclusiveTime - DeltaTime, 0.f, MaxExclusiveTime);	// 획득한 프레임에서 DeltaTime을 바로 빼줘 조금 부정확할 수 있다.
 			
-			// 
-			BoidTransforms[i] = BoidWriteBuffer.GetTransform(i);
+			BoidWriteBuffer.SetBoidData(i, NewLocation, NewRotation, NewVelocity, NewExclusiveTime);
+			BoidTransforms[i] = FTransform(FRotator(NewRotation), FVector(NewLocation), DefaultBoidMeshScale);
 		}, ParallelFlag);
 	}
 	
