@@ -12,6 +12,7 @@ using FSpatialGrid = FIntVector;
 struct FSpatialGridHashHelper
 {
 public:
+	FSpatialGridHashHelper() { }
 	FSpatialGridHashHelper(float InCellSize, int32 TotalNums);
 	
 	FSpatialGrid GetGridIndex(const FVector3f& Location) const;
@@ -21,6 +22,6 @@ public:
 	int32 GetHashSize() const { return HashTableSize; }
 	
 private:
-	float CellSize;
-	int32 HashTableSize;	
+	float CellSize = 0;
+	int32 HashTableSize = 0;	
 };

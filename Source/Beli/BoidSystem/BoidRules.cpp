@@ -30,10 +30,10 @@ bool UBoidRule_Cohesion::EvaluateBoid_Internal(OUT FBoidRuleResult& OutResult, c
 	int32 NumNeighborhood = 0;
 	const float CohesionDistSquared = FMath::Square(CohesionRadius);
 	
-	const FVector3f& MyBoidLocation = BoidBuffer.GetLocation(MyIndex);
+	const FVector3f& MyBoidLocation = BoidBuffer.Locations[MyIndex];
 	for (int32 NeighborIndex : NeighborIndices)
 	{
-		const FVector3f& NeighborLocation = BoidBuffer.GetLocation(NeighborIndex);
+		const FVector3f& NeighborLocation = BoidBuffer.Locations[NeighborIndex];
 		
 		const float DiffDistSquared = FVector3f::DistSquared(MyBoidLocation, NeighborLocation);
 		if (DiffDistSquared < CohesionDistSquared)
@@ -47,7 +47,7 @@ bool UBoidRule_Cohesion::EvaluateBoid_Internal(OUT FBoidRuleResult& OutResult, c
 	if (bHasNeighborhood)
 	{
 		CenterOfMass /= NumNeighborhood;
-		const FVector3f DesiredDirection = CenterOfMass - BoidBuffer.GetLocation(MyIndex);
+		const FVector3f DesiredDirection = CenterOfMass - BoidBuffer.Locations[MyIndex];
 		
 		if (!DesiredDirection.IsNearlyZero())
 		{
@@ -57,7 +57,7 @@ bool UBoidRule_Cohesion::EvaluateBoid_Internal(OUT FBoidRuleResult& OutResult, c
 			
 			// 조향력(Steering) 도출: 목표 속도 - 현재 속도
 			const FVector3f DesiredVelocity = DesiredDirection.GetUnsafeNormal() * BoidSceneContext.BoidMaxSpeed * SlowingScale;
-			OutResult.Force = DesiredVelocity - BoidBuffer.GetVelocity(MyIndex);
+			OutResult.Force = DesiredVelocity - BoidBuffer.Velocities[MyIndex];
 		}
 	}
 
@@ -77,10 +77,10 @@ bool UBoidRule_Separation::EvaluateBoid_Internal(OUT FBoidRuleResult& OutResult,
 	int32 NumNeighborhood = 0;
 	const float SeparationRadiusSquared = FMath::Square(SeparationRadius);
 	
-	const FVector3f& MyBoidLocation = BoidBuffer.GetLocation(MyIndex);
+	const FVector3f& MyBoidLocation = BoidBuffer.Locations[MyIndex];
 	for (int32 NeighborIndex : NeighborIndices)
 	{
-		FVector3f DiffVector = MyBoidLocation - BoidBuffer.GetLocation(NeighborIndex);
+		FVector3f DiffVector = MyBoidLocation - BoidBuffer.Locations[NeighborIndex];
 		
 		// 만약 다른 boid가 거의 겹쳐 있다면 랜덤한 방향의 작은 크기로의 속도 값을 구한다.
 		if (DiffVector.IsNearlyZero())
@@ -121,13 +121,13 @@ bool UBoidRule_Alignment::EvaluateBoid_Internal(OUT FBoidRuleResult& OutResult, 
 	int32 NumNeighborhood = 0;
 	const float AlignmentDistSquared = FMath::Square(AlignmentRadius);
 	
-	const FVector3f& MyBoidLocation = BoidBuffer.GetLocation(MyIndex);
+	const FVector3f& MyBoidLocation = BoidBuffer.Locations[MyIndex];
 	for (int32 NeighborIndex : NeighborIndices)
 	{
-		const float DiffDistSquared = FVector3f::DistSquared(MyBoidLocation, BoidBuffer.GetLocation(NeighborIndex));
+		const float DiffDistSquared = FVector3f::DistSquared(MyBoidLocation, BoidBuffer.Locations[NeighborIndex]);
 		if (DiffDistSquared < AlignmentDistSquared)
 		{
-			AverageVelocity += BoidBuffer.GetVelocity(NeighborIndex);
+			AverageVelocity += BoidBuffer.Velocities[NeighborIndex];
 			++NumNeighborhood;
 		}
 	}
@@ -141,7 +141,7 @@ bool UBoidRule_Alignment::EvaluateBoid_Internal(OUT FBoidRuleResult& OutResult, 
 		{
 			// 조향력(Steering) 도출: 목표 속도 - 현재 속도
 			const FVector3f DesiredVelocity = AverageVelocity.GetSafeNormal() * BoidSceneContext.BoidMaxSpeed;
-			OutResult.Force = DesiredVelocity - BoidBuffer.GetVelocity(MyIndex);
+			OutResult.Force = DesiredVelocity - BoidBuffer.Velocities[MyIndex];
 		}
 	}
 
@@ -157,12 +157,12 @@ UBoidRule_TendingToPlace::UBoidRule_TendingToPlace()
 
 bool UBoidRule_TendingToPlace::EvaluateBoid_Internal(OUT FBoidRuleResult& OutResult, const FBoidBuffer& BoidBuffer, int32 MyIndex, TArrayView<int32> NeighborIndices, const FBoidSceneContext& BoidSceneContext) const
 {
-	const FVector3f Distance = BoidSceneContext.SimulationSpace.TransformPosition(PlaceLocation) - BoidBuffer.GetLocation(MyIndex);
+	const FVector3f Distance = BoidSceneContext.SimulationSpace.TransformPosition(PlaceLocation) - BoidBuffer.Locations[MyIndex];
 	if (!Distance.IsNearlyZero())
 	{
 		// 조향력(Steering) 도출: 목표 속도 - 현재 속도
 		const FVector3f DesiredVelocity = Distance.GetUnsafeNormal() * BoidSceneContext.BoidMaxSpeed;
-		OutResult.Force = DesiredVelocity - BoidBuffer.GetVelocity(MyIndex);
+		OutResult.Force = DesiredVelocity - BoidBuffer.Velocities[MyIndex];
 	}
 	
 	return true;
@@ -191,13 +191,13 @@ bool UBoidRule_AvoidanceObstacle::EvaluateBoid_Internal(OUT FBoidRuleResult& Out
 	
 	// 0. 선두를 찾는다. !! TODO @Auggie 추가적인 최적화 필요
 #if 1
-	const FVector3f& MyBoidLocation = BoidBuffer.GetLocation(MyIndex);
-	const FVector3f& MyBoidVelocity = BoidBuffer.GetVelocity(MyIndex);
+	const FVector3f& MyBoidLocation = BoidBuffer.Locations[MyIndex];
+	const FVector3f& MyBoidVelocity = BoidBuffer.Velocities[MyIndex];
 	const FVector3f& MyBoidDirection = MyBoidVelocity.GetSafeNormal();
 	bool bIsLeader = true;
 	for (int32 NeighborIndex : NeighborIndices)
 	{
-		FVector3f ToNeighbor = BoidBuffer.GetLocation(NeighborIndex) - MyBoidLocation;
+		FVector3f ToNeighbor = BoidBuffer.Locations[NeighborIndex] - MyBoidLocation;
 		
 		const float DistSquared = ToNeighbor.SizeSquared();
 		if (FMath::IsNearlyZero(DistSquared) || DistSquared > FMath::Square(AvoidDistance * 0.5f))
@@ -210,7 +210,7 @@ bool UBoidRule_AvoidanceObstacle::EvaluateBoid_Internal(OUT FBoidRuleResult& Out
 		const FVector3f ToNeighborDirection = ToNeighbor.GetSafeNormal();
 		if (FVector3f::DotProduct(MyBoidDirection, ToNeighborDirection) > 0.9f)
         {
-            const FVector3f& NeighborVel = BoidBuffer.GetVelocity(NeighborIndex);
+            const FVector3f& NeighborVel = BoidBuffer.Velocities[NeighborIndex];
             const FVector3f NeighborDir = NeighborVel.GetSafeNormal();
 			
             const float AlignmentDot = FVector3f::DotProduct(MyBoidDirection, NeighborDir);
@@ -234,17 +234,18 @@ bool UBoidRule_AvoidanceObstacle::EvaluateBoid_Internal(OUT FBoidRuleResult& Out
 	// 1. 가장 기본인 '정면'으로 먼저 두꺼운 구(Sphere)를 던져봅니다.
 	FHitResult HitResult;
 	
-	const FVector MyBoidLocationD = FVector(BoidBuffer.GetLocation(MyIndex));
-	const FVector MyBoidVelocityD = FVector(BoidBuffer.GetVelocity(MyIndex));
-	const FRotator MyBoidRotationD = FRotator(BoidBuffer.GetRotation(MyIndex));
+	const FVector MyBoidLocationD = FVector(BoidBuffer.Locations[MyIndex]);
+	const FVector MyBoidVelocityD = FVector(BoidBuffer.Velocities[MyIndex]);
+	const FRotator MyBoidRotationD = FRotator(BoidBuffer.Rotations[MyIndex]);
     
 	// 이동 방향 전방으로 AvoidDistance 만큼 검사
 	const FVector ForwardDir = MyBoidVelocityD.GetSafeNormal();
+	const FVector StartPos = MyBoidLocationD + (ForwardDir * SphereShape.Sphere.Radius); 
 	const FVector EndPos = MyBoidLocationD + (ForwardDir * AvoidDistance);
 
 	const bool bHitForward = World->SweepSingleByChannel(
 		HitResult, 
-		MyBoidLocationD, 
+		StartPos, 
 		EndPos, 
 		FQuat::Identity, 
 		ECC_WorldStatic,
@@ -252,7 +253,7 @@ bool UBoidRule_AvoidanceObstacle::EvaluateBoid_Internal(OUT FBoidRuleResult& Out
 	);
 	
 #if !UE_BUILD_SHIPPING
-	if (BoidSceneContext.DebugParam > 0 && BoidBuffer.GetID(MyIndex) % BoidSceneContext.DebugParam == 0)
+	if (BoidSceneContext.DebugParam > 0)
 	{
 		DrawDebugLine(World, MyBoidLocationD, EndPos, FColor::Magenta, false, -1.0f, 0, 2.0f);
 	}
@@ -271,12 +272,13 @@ bool UBoidRule_AvoidanceObstacle::EvaluateBoid_Internal(OUT FBoidRuleResult& Out
 	for (const FVector& RayDir : FibonacciDirections)
 	{
 		// 피보나치 방향을 Boid의 공간으로 변환
-		FVector FibonacciRayDir = MyBoidRotationD.RotateVector(RayDir);
-		FVector RayEndPos = MyBoidLocationD + (FibonacciRayDir * AvoidDistance);
+		const FVector FibonacciRayDir = MyBoidRotationD.RotateVector(RayDir);
+		const FVector RayStartPos = MyBoidLocationD + (FibonacciRayDir * SphereShape.Sphere.Radius);
+		const FVector RayEndPos = MyBoidLocationD + (FibonacciRayDir * AvoidDistance);
 
 		const bool bHit = World->SweepSingleByChannel(
 			HitResult, 
-			MyBoidLocationD, 
+			RayStartPos, 
 			RayEndPos, 
 			FQuat::Identity, 
 			ECC_WorldStatic, 
@@ -284,9 +286,9 @@ bool UBoidRule_AvoidanceObstacle::EvaluateBoid_Internal(OUT FBoidRuleResult& Out
 		);
 		
 #if !UE_BUILD_SHIPPING
-		if (BoidSceneContext.DebugParam > 0 && BoidBuffer.GetID(MyIndex) % BoidSceneContext.DebugParam == 0)
+		if (BoidSceneContext.DebugParam > 0)
 		{
-			DrawDebugLine(World, MyBoidLocationD, RayEndPos, bHit ? FColor::Red : FColor::Green, false, -1.0f, 0, 3.0f);
+			DrawDebugLine(World, RayStartPos, RayEndPos, bHit ? FColor::Red : FColor::Green, false, -1.0f, 0, 3.0f);
 		}
 #endif
 
@@ -295,22 +297,22 @@ bool UBoidRule_AvoidanceObstacle::EvaluateBoid_Internal(OUT FBoidRuleResult& Out
 		{
 			EscapeDirection = FVector3f(FibonacciRayDir);
 			bFoundEscape = true;
-			break; 
+			break;
 		}
 	}
 	
-	OutResult.ExclusiveTime = 2.f;
+	OutResult.ExclusiveLevel = 10.0f;
 
 	// 4. 안전한 방향으로 조향력 발생
 	if (bFoundEscape)
 	{
 		const FVector3f DesiredVelocity = EscapeDirection * BoidSceneContext.BoidMaxSpeed;
-		OutResult.Force = (DesiredVelocity - BoidBuffer.GetVelocity(MyIndex));
+		OutResult.Force = (DesiredVelocity - BoidBuffer.Velocities[MyIndex]);
 	}
 	else
 	{
 		// 모든 방향이 막혀있다면 (막다른 골목)? -> 브레이크를 밟거나 뒤로 돌기!
-		OutResult.Force = -BoidBuffer.GetVelocity(MyIndex); 
+		OutResult.Force = -BoidBuffer.Velocities[MyIndex]; 
 	}
 
 	return true;
