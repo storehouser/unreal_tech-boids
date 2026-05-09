@@ -110,7 +110,7 @@ private:
 	TArray<int32> BoidNextIndex;
 #endif
 	
-	float GridCellSize = 500.f;
+	float GridCellSize = 0.f;
 	FVector MeshScale = FVector::OneVector;
 	
 	FBoidBuffer ReadBuffer;
