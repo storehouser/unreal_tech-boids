@@ -3,7 +3,7 @@
 
 #include "BoidRules.h"
 
-#include "Library/BoidsFunctionLibrary.h"
+#include "Library/BeliFunctionLibrary.h"
 
 
 bool UBoidRuleBase::EvaluateBoid(OUT FBoidRuleResult& OutResult, const FBoidBuffer& BoidBuffer, int32 MyIndex, TArrayView<int32> NeighborIndices, const FBoidSceneContext& BoidSceneContext) const
@@ -180,7 +180,7 @@ void UBoidRule_AvoidanceObstacle::Initialize()
 	Super::Initialize();
 	
 	// 충돌 검사를 위한 피보나치 레이를 캐싱
-	FibonacciDirections = UBoidsFunctionLibrary::GetFibonacciDirections(NumRays, MaxRayDegree);
+	FibonacciDirections = UBeliFunctionLibrary::GetFibonacciDirections(NumRays, MaxRayDegree);
 	SphereShape = FCollisionShape::MakeSphere(BoidRadius); // 크기(여유 공간)만큼의 구형
 }
 

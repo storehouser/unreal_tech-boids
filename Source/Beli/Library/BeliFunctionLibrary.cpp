@@ -1,10 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "BoidsFunctionLibrary.h"
+#include "BeliFunctionLibrary.h"
 
 
-TArray<FVector> UBoidsFunctionLibrary::GetFibonacciDirections(int32 NumRays, float MaxAngleDegrees)
+TArray<FVector> UBeliFunctionLibrary::GetFibonacciDirections(int32 NumRays, float MaxAngleDegrees)
 {
 	if (!ensure(NumRays > 0))
 	{
@@ -37,4 +37,13 @@ TArray<FVector> UBoidsFunctionLibrary::GetFibonacciDirections(int32 NumRays, flo
 	}
 	
 	return Directions;
+}
+
+FColor UBeliFunctionLibrary::GetColorFromHash(int32 HashKey, int32 Alpha)
+{
+	// 해시 키를 이용하여 황금값을 위한 Hue 값 게산
+	const float Hue = FMath::Fmod(HashKey * 137.508f, 360.0f);
+	FLinearColor HashLinearColor(Hue, 0.9f, 0.9f, 1.0f);
+	
+	return HashLinearColor.HSVToLinearRGB().ToFColor(true).WithAlpha(Alpha);
 }

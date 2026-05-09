@@ -2,6 +2,7 @@
 #include "BoidData.h"
 
 #include "Beli.h"
+#include "Library/BeliFunctionLibrary.h"
 #include "Library/SpatialGridHashHelper.h"
 
 
@@ -131,11 +132,7 @@ void FBoidSpatialContext::ShowDebugGrid(const UWorld* World, int32 ThresholdPct)
 				
 				if (NumBoidsInHash > AbsoluteDensityThreshold)
 				{
-					// 해시 키를 이용하여 황금값을 위한 Hue 값 게산
-					const float Hue = FMath::Fmod(GridHashKey * 137.508f, 360.0f);
-					FLinearColor HashLinearColor(Hue, 0.9f, 0.9f, 1.0f);
-					FColor HeatColor = HashLinearColor.HSVToLinearRGB().ToFColor(true).WithAlpha(75);
-					
+					const FColor HeatColor = UBeliFunctionLibrary::GetColorFromHash(GridHashKey, 75);
 					DrawDebugSolidBox(World, CellCenter, FVector(GridCellSize * 0.5f), HeatColor, false, -1.0f, 0);
 				}
 			}
