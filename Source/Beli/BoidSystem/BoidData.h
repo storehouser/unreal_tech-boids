@@ -64,7 +64,7 @@ public:
 		WriteBuffer.ExclusiveTimes[InIndex] = InExclusiveTime;
 	
 		check(BoidTransforms.IsValidIndex(InIndex));
-		BoidTransforms[WriteBuffer.OriginIndex[InIndex]] = FTransform(FRotator(InRotation), FVector(InLocation), MeshScale);
+		BoidTransforms[InIndex] = FTransform(FRotator(InRotation), FVector(InLocation), MeshScale);
 	}
 	
 	FORCEINLINE int32 GetStartBoidIndexByHashKey(const FSpatialGrid& InGridIndex) const { return CellStartIndex[GridHashHelper.GetHashKey(InGridIndex)]; }
@@ -81,8 +81,9 @@ public:
 	FORCEINLINE int32 GetNextBoidByBoidIndex(int32 InBoidIndex) const { return BoidNextIndex[InBoidIndex]; }
 #endif
 	
-	FORCEINLINE const TArray<FVector3f>& GetVelocities() const { return ReadBuffer.Velocities; }
 	FORCEINLINE const TArray<FTransform>& GetTransforms() const { return BoidTransforms; }
+	FORCEINLINE const TArray<FVector3f>& GetVelocities() const { return ReadBuffer.Velocities; }
+	FORCEINLINE const TArray<float>& GetExclusiveTimes() const { return ReadBuffer.ExclusiveTimes; }
 	
 	/** */
 	void SwapBuffer();

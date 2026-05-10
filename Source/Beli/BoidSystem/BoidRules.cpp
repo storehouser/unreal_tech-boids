@@ -301,7 +301,7 @@ bool UBoidRule_AvoidanceObstacle::EvaluateBoid_Internal(OUT FBoidRuleResult& Out
 		}
 	}
 	
-	OutResult.ExclusiveLevel = 10.0f;
+	OutResult.ExclusiveLevel = 30.0f;		// 다음 틱에도 중첩될 수 있기 때문에 조금 짧게 잡아야 한다.
 
 	// 4. 안전한 방향으로 조향력 발생
 	if (bFoundEscape)

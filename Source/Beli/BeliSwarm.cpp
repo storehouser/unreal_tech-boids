@@ -25,7 +25,7 @@ void ABeliSwarm::BeginPlay()
 	BoidSystem.Initialize(GetWorld(), InstancedMeshComp->GetComponentTransform());
 	
 	const TArray<FTransform>& BoidTransforms = BoidSystem.GetSpatialContext().GetTransforms();
-	InstancedMeshComp->SetNumCustomDataFloats(3);
+	InstancedMeshComp->SetNumCustomDataFloats(4);
 	InstancedMeshComp->AddInstances(BoidTransforms, false, false);
 }
 
@@ -40,6 +40,7 @@ void ABeliSwarm::Tick(float DeltaTime)
 	
 	// 2. 보이드의 정보를 얻어와 ISMC에 적용
 	const TArray<FTransform>& BoidTransforms = BoidSystem.GetSpatialContext().GetTransforms();
+	const TArray<float>& ExclTimes = BoidSystem.GetSpatialContext().GetExclusiveTimes();
 
 	InstancedMeshComp->BatchUpdateInstancesTransforms(0, BoidTransforms, true, false, false);
 	for (int32 i = 0; i < BoidTransforms.Num(); ++i)
@@ -64,6 +65,7 @@ void ABeliSwarm::Tick(float DeltaTime)
 		InstancedMeshComp->SetCustomDataValue(i, 0, Color.R, false);
 		InstancedMeshComp->SetCustomDataValue(i, 1, Color.G, false);
 		InstancedMeshComp->SetCustomDataValue(i, 2, Color.B, false);
+		InstancedMeshComp->SetCustomDataValue(i, 3, ExclTimes[i], false);
 	}
 	
 	InstancedMeshComp->MarkRenderStateDirty();

@@ -223,7 +223,7 @@ void FBoidSystem::UpdateBoids_Concurrent(float DeltaTime, const FTransform& Simu
 			
 			// 독점 레벨을 현재 DeltaTime만큼 주어 레벨에 비례해서 독점 시간을 일정 기간 가져간다. 매 수행 될때마다 DeltaTime을 빼줘서 일정 시간이 지나면 독점 시간이 사라지게 한다.
 			// 독점 레벨을 획득한 프레임이였다면, 획득하자 마자 DeltaTime을 바로 빼주기 때문에 조금 부정확할 수 있다.
-			const float NewExclusiveTime = FMath::Clamp(AccumulatedResult.ExclusiveLevel * DeltaTime - DeltaTime, 0.f, MaxExclusiveTime);
+			const float NewExclusiveTime = FMath::Clamp(SpatialContext.ReadExclTime(i) + AccumulatedResult.ExclusiveLevel * DeltaTime - DeltaTime, 0.f, MaxExclusiveTime);
 			
 			SpatialContext.WriteBoidData(i, NewLocation, NewRotation, NewVelocity, NewExclusiveTime);
 			
