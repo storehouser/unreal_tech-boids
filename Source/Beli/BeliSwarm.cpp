@@ -4,7 +4,6 @@
 #include "BeliSwarm.h"
 
 #include "Components/InstancedStaticMeshComponent.h"
-#include "Library/BeliFunctionLibrary.h"
 
 
 ABeliSwarm::ABeliSwarm()
