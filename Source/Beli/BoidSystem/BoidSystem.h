@@ -38,7 +38,7 @@ public:
 	float MaxExclusiveTime = 5.0f;
 	
 	UPROPERTY(EditAnywhere, Category = "Config")
-	FVector DefaultBoidMeshScale = FVector::OneVector * 0.5f;
+	float DefaultBoidMeshScale = 0.35f;
 	
 protected:
 	UPROPERTY(EditAnywhere, Instanced, Category = "Rules")

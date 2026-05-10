@@ -59,7 +59,7 @@ void FBoidSystem::Initialize(UWorld* InWorld, const FTransform& SimulationSpace)
 	World = InWorld;
 	
 	// Boids 초기화 - 임의의 값들을 정해준다. 해당 임의 값을 토대로 BoidTransforms을 채운다.
-	SpatialContext.Initialize(MaxBoidCount, GridCellSize, DefaultBoidMeshScale);
+	SpatialContext.Initialize(MaxBoidCount, GridCellSize, FVector::OneVector * DefaultBoidMeshScale);
 	for (int32 i = 0; i < MaxBoidCount; ++i)
 	{
 		// Swarm이 설치된 위치를 기준으로 랜덤값을 구하기 위해 Local Space 상의 위치 값을 구하고 그 값을 토대로 WorldSpace로 변환.

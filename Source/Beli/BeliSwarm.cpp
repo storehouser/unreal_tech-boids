@@ -46,8 +46,7 @@ void ABeliSwarm::Tick(float DeltaTime)
 	{
 		FRotator Rotator = BoidTransforms[i].Rotator();
 
-		// 1. Yaw(좌우 회전)를 0 ~ 360 사이의 깔끔한 각도로 보정합니다.
-		// ClampAxis는 -90도 같은 음수나 400도 같은 오버된 값을 0~360 안으로 예쁘게 말아줍니다.
+		// Yaw(좌우 회전)를 0 ~ 360 사이의 깔끔한 각도로 보정.
 		float Hue = FRotator::ClampAxis(Rotator.Yaw);
 
 		// 2. Pitch(위아래 고갯짓, -90 ~ 90)를 명도(Value)로 씁니다.
@@ -59,8 +58,7 @@ void ABeliSwarm::Tick(float DeltaTime)
 			Rotator.Pitch
 		);
 
-		// 3. FLinearColor에 R, G, B 대신 Hue, Saturation(채도=1.0), Value(명도)를 넣고,
-		// HSVToLinearRGB() 함수를 호출해 진짜 RGB 색상으로 변환합니다!
+		// 3. FLinearColor에 R, G, B 대신 Hue, Saturation(채도=1.0), Value(명도)를 사용
 		FLinearColor Color = FLinearColor(Hue, 1.0f, Brightness, 1.0f).HSVToLinearRGB();
 		
 		InstancedMeshComp->SetCustomDataValue(i, 0, Color.R, false);
