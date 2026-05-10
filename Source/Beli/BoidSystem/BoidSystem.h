@@ -21,7 +21,7 @@ public:
 	void UpdateBoids_Concurrent(float DeltaTime, const FTransform& SimulationSpace);
 	
 	/** */
-	const TArray<FTransform>& GetBoidTransforms() const { return SpatialContext.GetTransforms(); }
+	const FBoidSpatialContext& GetSpatialContext() const { return SpatialContext; }
 	
 public:
 	/** 최대 Boid 객체의 수 */

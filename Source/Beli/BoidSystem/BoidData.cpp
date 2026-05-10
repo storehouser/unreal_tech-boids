@@ -16,6 +16,11 @@ void FBoidSpatialContext::Initialize(int32 InMaxBoidCount, float InGridCellSize,
 	ReadBuffer.SetNumUninitialized(MaxBoidCount);
 	BoidTransforms.SetNumUninitialized(MaxBoidCount);
 	
+	for (int32 i = 0; i < MaxBoidCount; ++i)
+	{
+		WriteBuffer.OriginIndex[i] = i;
+	}
+	
 	GridHashHelper = FSpatialGridHashHelper(GridCellSize, MaxBoidCount);
 }
 

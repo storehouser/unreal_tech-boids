@@ -13,6 +13,7 @@ struct FBoidBuffer
 public:
 	void SetNumUninitialized(int32 MaxBoidCount)
 	{
+		OriginIndex.SetNumUninitialized(MaxBoidCount);
 		Locations.SetNumUninitialized(MaxBoidCount);
 		Rotations.SetNumUninitialized(MaxBoidCount);
 		Velocities.SetNumUninitialized(MaxBoidCount);
@@ -21,6 +22,7 @@ public:
 	
 	FORCEINLINE void CopyDataFrom(int32 DestIndex, const FBoidBuffer& SourceBuffer, int32 SourceIndex)
 	{
+		OriginIndex[DestIndex] = SourceBuffer.OriginIndex[SourceIndex];
 		Locations[DestIndex] = SourceBuffer.Locations[SourceIndex];
 		Rotations[DestIndex] = SourceBuffer.Rotations[SourceIndex];
 		Velocities[DestIndex] = SourceBuffer.Velocities[SourceIndex];
@@ -28,6 +30,7 @@ public:
 	}
 	
 public:
+	TArray<int32> OriginIndex;
 	TArray<FVector3f> Locations;
 	TArray<FRotator3f> Rotations;
 	TArray<FVector3f> Velocities;
@@ -61,7 +64,7 @@ public:
 		WriteBuffer.ExclusiveTimes[InIndex] = InExclusiveTime;
 	
 		check(BoidTransforms.IsValidIndex(InIndex));
-		BoidTransforms[InIndex] = FTransform(FRotator(InRotation), FVector(InLocation), MeshScale);
+		BoidTransforms[WriteBuffer.OriginIndex[InIndex]] = FTransform(FRotator(InRotation), FVector(InLocation), MeshScale);
 	}
 	
 	FORCEINLINE int32 GetStartBoidIndexByHashKey(const FSpatialGrid& InGridIndex) const { return CellStartIndex[GridHashHelper.GetHashKey(InGridIndex)]; }
@@ -78,6 +81,7 @@ public:
 	FORCEINLINE int32 GetNextBoidByBoidIndex(int32 InBoidIndex) const { return BoidNextIndex[InBoidIndex]; }
 #endif
 	
+	FORCEINLINE const TArray<FVector3f>& GetVelocities() const { return ReadBuffer.Velocities; }
 	FORCEINLINE const TArray<FTransform>& GetTransforms() const { return BoidTransforms; }
 	
 	/** */
