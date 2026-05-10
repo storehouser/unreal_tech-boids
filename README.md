@@ -1,10 +1,20 @@
+
 # 🕊️ Beli
 Unreal Engine Boids SimulationAn Unreal Engine project focused on the implementation and performance optimization of the Boids flocking algorithm.<br>
 언리얼 엔진 기반의 Boids 군집 알고리즘 구현 및 성능 최적화 프로젝트입니다.<br><br>
 
 
 # 📖 Project Overview
-<img width="1188" height="1159" alt="image" src="https://github.com/user-attachments/assets/0bbfe52d-3a99-43b7-8213-669792d1b42d" /><br>
+<table style="width: 100%;">
+  <tr>
+    <td style="width: 50%;"><img src="https://github.com/user-attachments/assets/0bbfe52d-3a99-43b7-8213-669792d1b42d" width="100%"></td>
+    <td style="width: 50%;"><img src="https://github.com/user-attachments/assets/b0b97c2c-4f15-4c3f-a48c-d0adac9b85d9" width="100%"></td>
+  </tr>
+  <tr>
+    <td style="width: 50%;"><img src="https://github.com/user-attachments/assets/472132ab-3618-41f2-839b-508e0122a11e" width="100%"></td>
+    <td style="width: 50%;"><img src="https://github.com/user-attachments/assets/95e90cdb-c90c-44af-9050-0460d9aa59a0" width="100%"></td>
+  </tr>
+</table>
 Beli 프로젝트는 수많은 객체(Boids)가 유기적으로 무리 지어 이동하는 군집 시뮬레이션을 언리얼 엔진(Unreal Engine) 환경에서 C++로 구현하는 프로젝트입니다.<br>
 단순한 로직 구현을 넘어, 수천개의 객체를 렌더링하고 연산하기 위한 최적화 기법을 점진적으로 적용하고 연구하는 것을 목표로 합니다.<br><br>
 
