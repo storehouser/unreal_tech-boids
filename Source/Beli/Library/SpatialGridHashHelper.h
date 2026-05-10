@@ -16,12 +16,13 @@ public:
 	FSpatialGridHashHelper(float InCellSize, int32 TotalNums);
 	
 	FSpatialGrid GetGridIndex(const FVector3f& Location) const;
-	int32 GetHashKey(const FSpatialGrid& Grid) const;
-	int32 GetHashKeyFromLocation(const FVector3f& Location) const;
+	uint32 GetHashKey(const FSpatialGrid& Grid) const;
+	uint32 GetHashKeyFromLocation(const FVector3f& Location) const;
 	
 	int32 GetHashSize() const { return HashTableSize; }
 	
 private:
 	float CellSize = 0;
-	int32 HashTableSize = 0;	
+	int32 HashTableSize = 0;
+	uint32 HashMask = 0;
 };
