@@ -98,7 +98,6 @@ void FBoidSpatialContext::SwapBuffer()
 
 void FBoidSpatialContext::ShowDebugGrid(const UWorld* World, int32 ThresholdPct)
 {
-#if USE_CACHE_OPTIMIZED_LOGIC
 	check(IsValid(World));
 	
 	FBox BoidBounds;
@@ -136,15 +135,27 @@ void FBoidSpatialContext::ShowDebugGrid(const UWorld* World, int32 ThresholdPct)
 			for (int32 Z = MinGrid.Z; Z <= MaxGrid.Z; Z++)
 			{
 				++DrawCount;
-				
+
 				// 해시 테이블에서 해당 인덱스의 밀집도 검사 후 DrawDebugSolidBox 호출
 				const FSpatialGrid GridIndex = FSpatialGrid(X, Y, Z);
+				const FVector CellCenter = FVector(GridIndex) * GridCellSize + FVector(GridCellSize * 0.5f);
+				
+				DrawDebugBox(World, CellCenter, FVector(GridCellSize * 0.5f), FColor::Black, false, -1.0f, 0, 2.0f); // 외곽선
+				
 				const int32 GridHashKey = GridHashHelper.GetHashKey(GridIndex);
+#if USE_CACHE_OPTIMIZED_LOGIC
 				check(CellBoidCount.IsValidIndex(GridHashKey));
 				const int32 NumBoidsInHash = CellBoidCount[GridHashKey];
-				
-				const FVector CellCenter = FVector(GridIndex) * GridCellSize + FVector(GridCellSize * 0.5f);
-				DrawDebugBox(World, CellCenter, FVector(GridCellSize * 0.5f), FColor::Black, false, -1.0f, 0, 2.0f); // 외곽선
+#else
+				int32 NumBoidsInHash = 0;
+				int32 IndexWalker = CellStartIndex[GridHashKey];
+				while (IndexWalker != -1)
+				{
+					++NumBoidsInHash;
+					
+					IndexWalker = BoidNextIndex[IndexWalker];
+				}
+#endif				
 				
 				if (NumBoidsInHash > AbsoluteDensityThreshold)
 				{
@@ -156,5 +167,5 @@ void FBoidSpatialContext::ShowDebugGrid(const UWorld* World, int32 ThresholdPct)
 	}
 	
 	UE_LOG(LogBeli, Verbose, TEXT("Grid DebugDraw Count - %d"), DrawCount);
-#endif
+
 }

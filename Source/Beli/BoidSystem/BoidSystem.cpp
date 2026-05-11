@@ -16,7 +16,7 @@ namespace BeliConsole
 	ECVF_Cheat);
 	
 	static TAutoConsoleVariable CVarBoidGridDensityThreshold(
-	TEXT("Boid.GridDensityThreshold"),
+	TEXT("Boids.GridDensityThreshold"),
 	0,
 	TEXT("Threshold percentage for Spatial Hash Grid debug drawing.\n")
 	TEXT("  0     : Disable grid debug drawing.\n")
