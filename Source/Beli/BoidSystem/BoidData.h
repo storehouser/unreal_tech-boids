@@ -62,9 +62,6 @@ public:
 		WriteBuffer.Rotations[InIndex] = InRotation;
 		WriteBuffer.Velocities[InIndex] = InVelocity;
 		WriteBuffer.ExclusiveTimes[InIndex] = InExclusiveTime;
-	
-		check(BoidTransforms.IsValidIndex(InIndex));
-		BoidTransforms[InIndex] = FTransform(FRotator(InRotation), FVector(InLocation), MeshScale);
 	}
 	
 	FORCEINLINE int32 GetStartBoidIndexByHashKey(const FSpatialGrid& InGridIndex) const { return CellStartIndex[GridHashHelper.GetHashKey(InGridIndex)]; }
@@ -81,7 +78,7 @@ public:
 	FORCEINLINE int32 GetNextBoidByBoidIndex(int32 InBoidIndex) const { return BoidNextIndex[InBoidIndex]; }
 #endif
 	
-	FORCEINLINE const TArray<FTransform>& GetTransforms() const { return BoidTransforms; }
+	TArray<FTransform> GetTransforms() const;	// TODO @Auggie 매번 생성하는게 아니라 해당 Transform에 대한 Dirty가 생겼을 때만 멤버 값 Update & Get 할 수 있도록 변경
 	FORCEINLINE const TArray<FVector3f>& GetVelocities() const { return ReadBuffer.Velocities; }
 	FORCEINLINE const TArray<float>& GetExclusiveTimes() const { return ReadBuffer.ExclusiveTimes; }
 	
@@ -121,7 +118,6 @@ private:
 	
 	FBoidBuffer ReadBuffer;
 	FBoidBuffer WriteBuffer;
-	TArray<FTransform> BoidTransforms;
 	
 	FSpatialGridHashHelper GridHashHelper;
 };

@@ -14,7 +14,6 @@ void FBoidSpatialContext::Initialize(int32 InMaxBoidCount, float InGridCellSize,
 	
 	WriteBuffer.SetNumUninitialized(MaxBoidCount);
 	ReadBuffer.SetNumUninitialized(MaxBoidCount);
-	BoidTransforms.SetNumUninitialized(MaxBoidCount);
 	
 	for (int32 i = 0; i < MaxBoidCount; ++i)
 	{
@@ -22,6 +21,18 @@ void FBoidSpatialContext::Initialize(int32 InMaxBoidCount, float InGridCellSize,
 	}
 	
 	GridHashHelper = FSpatialGridHashHelper(GridCellSize, MaxBoidCount);
+}
+
+TArray<FTransform> FBoidSpatialContext::GetTransforms() const
+{
+	TArray<FTransform> Transforms;
+	Transforms.Reserve(MaxBoidCount);
+	for (int32 i = 0; i < MaxBoidCount; ++i)
+	{
+		Transforms.Emplace(FRotator(ReadBuffer.Rotations[i]), FVector(ReadBuffer.Locations[i]), MeshScale);	
+	}
+	
+	return Transforms;
 }
 
 void FBoidSpatialContext::SwapBuffer()
