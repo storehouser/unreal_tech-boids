@@ -40,16 +40,17 @@ void ABeliSwarm::Tick(float DeltaTime)
 	
 	// 2. 보이드의 정보를 얻어와 ISMC에 적용
 	const TArray<FTransform>& BoidTransforms = BoidSystem.GetSpatialContext().GetTransforms();
+	const TArray<FVector3f>& BoidVels = BoidSystem.GetSpatialContext().GetVelocities();
 	const TArray<float>& ExclTimes = BoidSystem.GetSpatialContext().GetExclusiveTimes();
 
 	InstancedMeshComp->BatchUpdateInstancesTransforms(0, BoidTransforms, true, false, false);
 	for (int32 i = 0; i < BoidTransforms.Num(); ++i)
 	{
 		FRotator Rotator = BoidTransforms[i].Rotator();
-
+		
 		// Yaw(좌우 회전)를 0 ~ 360 사이의 깔끔한 각도로 보정.
 		float Hue = FRotator::ClampAxis(Rotator.Yaw);
-
+		
 		// 2. Pitch(위아래 고갯짓, -90 ~ 90)를 명도(Value)로 씁니다.
 		// 위로 솟구치면(90) 밝아지고, 아래로 곤두박질치면(-90) 어두워지게 만듭니다.
 		// 어둠 속으로 사라지는 걸 막기 위해 최소 밝기를 0.2로 잡았습니다.
@@ -58,13 +59,13 @@ void ABeliSwarm::Tick(float DeltaTime)
 			FVector2D(0.2f, 1.0f),
 			Rotator.Pitch
 		);
-
+		
 		// 3. FLinearColor에 R, G, B 대신 Hue, Saturation(채도=1.0), Value(명도)를 사용
 		FLinearColor Color = FLinearColor(Hue, 1.0f, Brightness, 1.0f).HSVToLinearRGB();
 		
-		InstancedMeshComp->SetCustomDataValue(i, 0, Color.R, false);
-		InstancedMeshComp->SetCustomDataValue(i, 1, Color.G, false);
-		InstancedMeshComp->SetCustomDataValue(i, 2, Color.B, false);
+		InstancedMeshComp->SetCustomDataValue(i, 0, BoidVels[i].X, false);
+		InstancedMeshComp->SetCustomDataValue(i, 1, BoidVels[i].Y, false);
+		InstancedMeshComp->SetCustomDataValue(i, 2, BoidVels[i].Z, false);
 		InstancedMeshComp->SetCustomDataValue(i, 3, ExclTimes[i], false);
 	}
 	
