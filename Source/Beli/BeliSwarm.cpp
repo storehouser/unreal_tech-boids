@@ -46,23 +46,7 @@ void ABeliSwarm::Tick(float DeltaTime)
 	InstancedMeshComp->BatchUpdateInstancesTransforms(0, BoidTransforms, true, false, false);
 	for (int32 i = 0; i < BoidTransforms.Num(); ++i)
 	{
-		FRotator Rotator = BoidTransforms[i].Rotator();
-		
-		// Yaw(좌우 회전)를 0 ~ 360 사이의 깔끔한 각도로 보정.
-		float Hue = FRotator::ClampAxis(Rotator.Yaw);
-		
-		// 2. Pitch(위아래 고갯짓, -90 ~ 90)를 명도(Value)로 씁니다.
-		// 위로 솟구치면(90) 밝아지고, 아래로 곤두박질치면(-90) 어두워지게 만듭니다.
-		// 어둠 속으로 사라지는 걸 막기 위해 최소 밝기를 0.2로 잡았습니다.
-		float Brightness = FMath::GetMappedRangeValueClamped(
-			FVector2D(-90.0f, 90.0f),
-			FVector2D(0.2f, 1.0f),
-			Rotator.Pitch
-		);
-		
-		// 3. FLinearColor에 R, G, B 대신 Hue, Saturation(채도=1.0), Value(명도)를 사용
-		FLinearColor Color = FLinearColor(Hue, 1.0f, Brightness, 1.0f).HSVToLinearRGB();
-		
+		// ISMC에 Instance들에게 각 데이터를 넘겨준다. 메테리얼에서 추출해서 자유롭게 사용.
 		InstancedMeshComp->SetCustomDataValue(i, 0, BoidVels[i].X, false);
 		InstancedMeshComp->SetCustomDataValue(i, 1, BoidVels[i].Y, false);
 		InstancedMeshComp->SetCustomDataValue(i, 2, BoidVels[i].Z, false);
