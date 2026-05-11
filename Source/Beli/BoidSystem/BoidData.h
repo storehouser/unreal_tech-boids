@@ -1,6 +1,6 @@
 #pragma once
 
-#define USE_CACHE_OPTIMIZED_LOGIC 1
+#define USE_CACHE_OPTIMIZED_LOGIC 0
 
 #include "Library/SpatialGridHashHelper.h"
 
