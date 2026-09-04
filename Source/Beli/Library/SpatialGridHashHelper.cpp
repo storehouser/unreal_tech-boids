@@ -25,7 +25,7 @@ uint32 FSpatialGridHashHelper::GetHashKey(const FSpatialGrid& Grid) const
 	constexpr int32 Prime2 = 19349663;
 	constexpr int32 Prime3 = 83492791;
 	
-	const int32 Hash = (Grid.X * Prime1) ^ (Grid.Y & Prime2) ^ (Grid.Z * Prime3);
+	const int32 Hash = (Grid.X * Prime1) ^ (Grid.Y * Prime2) ^ (Grid.Z * Prime3);
 	return StaticCast<uint32>(Hash) & HashMask;
 }
 
